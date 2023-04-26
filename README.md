@@ -1,21 +1,21 @@
-<h1 align="center">pytere</h1>
+<h1 align="center">clothion</h1>
 <p align="center">
 Python Template repository
 </p>
 
 <p align="center">
-    <a href="https://github.com/astariul/pytere/releases"><img src="https://img.shields.io/github/release/astariul/pytere.svg" alt="GitHub release" /></a>
-    <a href="https://github.com/astariul/pytere/actions/workflows/pytest.yaml"><img src="https://github.com/astariul/pytere/actions/workflows/pytest.yaml/badge.svg" alt="Test status" /></a>
-    <a href="https://github.com/astariul/pytere/actions/workflows/lint.yaml"><img src="https://github.com/astariul/pytere/actions/workflows/lint.yaml/badge.svg" alt="Lint status" /></a>
+    <a href="https://github.com/astariul/clothion/releases"><img src="https://img.shields.io/github/release/astariul/clothion.svg" alt="GitHub release" /></a>
+    <a href="https://github.com/astariul/clothion/actions/workflows/pytest.yaml"><img src="https://github.com/astariul/clothion/actions/workflows/pytest.yaml/badge.svg" alt="Test status" /></a>
+    <a href="https://github.com/astariul/clothion/actions/workflows/lint.yaml"><img src="https://github.com/astariul/clothion/actions/workflows/lint.yaml/badge.svg" alt="Lint status" /></a>
     <img src=".github/badges/coverage.svg" alt="Coverage status" />
-    <a href="https://astariul.github.io/pytere"><img src="https://img.shields.io/website?down_message=failing&label=docs&up_color=green&up_message=passing&url=https%3A%2F%2Fastariul.github.io%2Fpytere" alt="Docs" /></a>
+    <a href="https://astariul.github.io/clothion"><img src="https://img.shields.io/website?down_message=failing&label=docs&up_color=green&up_message=passing&url=https%3A%2F%2Fastariul.github.io%2Fclothion" alt="Docs" /></a>
     <br>
     <a href="https://pycqa.github.io/isort/"><img src="https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat" alt="isort" /></a>
     <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="black" /></a>
     <a href="https://github.com/PyCQA/flake8"><img src="https://img.shields.io/badge/code%20style-flake8-blue" alt="flake8" /></a>
     <a href="https://github.com/terrencepreilly/darglint"><img src="https://img.shields.io/badge/docstrings-darglint-blue" alt="darglint" /></a>
     <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white" alt="pre-commit"></a>
-    <a href="https://github.com/astariul/pytere/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="licence" /></a>
+    <a href="https://github.com/astariul/clothion/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="licence" /></a>
 </p>
 
 <p align="center">
@@ -26,13 +26,13 @@ Python Template repository
   <a href="#faq">FAQ</a> •
   <a href="#contribute">Contribute</a>
   <br>
-  <a href="https://astariul.github.io/pytere/" target="_blank">Documentation</a>
+  <a href="https://astariul.github.io/clothion/" target="_blank">Documentation</a>
 </p>
 
 
 <h2 align="center">Description</h2>
 
-**`pytere`** stands for **Py**thon **te**mplate **re**pository.
+**`clothion`** stands for **Py**thon **te**mplate **re**pository.
 
 It's just a template repository for python, with the following features :
 
@@ -48,11 +48,11 @@ It's just a template repository for python, with the following features :
 
 <h2 align="center">Install</h2>
 
-Install `pytere` by running :
+Install `clothion` by running :
 
 
 ```
-pip install pytere
+pip install clothion
 ```
 
 ---
@@ -60,19 +60,19 @@ pip install pytere
 For development, you can install it locally by first cloning the repository :
 
 ```
-git clone https://github.com/astariul/pytere.git
-cd pytere
+git clone https://github.com/astariul/clothion.git
+cd clothion
 pip install -e .
 ```
 
 
 <h2 align="center">Usage</h2>
 
-`pytere` does not contain any useful code because it's a template repository.  
+`clothion` does not contain any useful code because it's a template repository.  
 But you can check if the package is correctly installed with :
 
 ```python
-from pytere import is_odd
+from clothion import is_odd
 
 print(is_odd(2))  # False
 ```
@@ -83,13 +83,13 @@ print(is_odd(2))  # False
 To use this template, click the button "Use this template" :
 
 <p align="center">
-  <a href="https://github.com/astariul/pytere/generate"><img src="https://img.shields.io/badge/%20-Use%20this%20template-green?style=for-the-badge&color=347d39" alt="Use template" /></a>
+  <a href="https://github.com/astariul/clothion/generate"><img src="https://img.shields.io/badge/%20-Use%20this%20template-green?style=for-the-badge&color=347d39" alt="Use template" /></a>
 </p>
 
 It will prompt you to create a new Github repository.
 
 Then replace the content  in your freshly created repository, with your own package name, own code, and update the links to point to your own repository.  
-More details in the [documentation](https://astariul.github.io/pytere/latest/usage/).
+More details in the [documentation](https://astariul.github.io/clothion/latest/usage/).
 
 
 <h2 align="center">FAQ</h2>
