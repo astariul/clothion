@@ -19,26 +19,3 @@ body:
     attributes:
       label: Expected behavior
       description: What is the expected behavior ?
-  - type: textarea
-    id: repro
-    attributes:
-      label: Steps to reproduce
-      description: Describe the steps to follow to reproduce the bug.
-      value: "* "
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Version
-      description: Please provide the version you're using (run the commands in backticks on a shell).
-      value: |-
-        - Python: `python --version`
-        - clothion: `pip show clothion | grep -E ^Version`
-    validations:
-      required: true
-  - type: textarea
-    id: logs
-    attributes:
-      label: Logs & stacktraces
-      description: Please copy and paste any relevant log output, or stacktraces. This will be automatically formatted into code, so no need for backticks.
-      render: shell

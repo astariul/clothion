@@ -21,7 +21,6 @@
 <!--- Add here any task left to do before the PR is ready for review / merging --->
 - [ ] Perform self-review of my own code
 - [ ] Comment the code, particularly in hard-to-understand areas
-- [ ] Update the documentation accordingly to the new code
 - [ ] Lint / format the code
 - [ ] Update existing tests / Add new tests
 - [ ] Tests are passing locally
