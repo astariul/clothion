@@ -24,7 +24,7 @@ setuptools.setup(
     author="Nicolas REMOND",
     author_email="remondnicola@gmail.com",
     description="Reserved",
-    long_description="Reserved",
+    long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/astariul/clothion",
     packages=setuptools.find_packages(),
