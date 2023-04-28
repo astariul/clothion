@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 
-from clothion import __version__
+from clothion import __version__, config
 
 
 app = FastAPI(title="Clothion", version=__version__, redoc_url=None)
@@ -14,4 +14,4 @@ async def version() -> str:
 
 def serve():
     """Main function, serving the app."""
-    uvicorn.run(app)
+    uvicorn.run(app, host=config.host, port=config.port)

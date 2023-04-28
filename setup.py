@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 with open("clothion/__init__.py") as f:
     v = [line for line in f if line.startswith("__version__")][0].split('"')[1]
 
-reqs = ["fastapi[all]~=0.95"]
+reqs = ["fastapi[all]~=0.95", "omegaconf~=2.3"]
 
 extras_require = {
     "test": ["pytest~=7.0", "pytest-cov~=3.0", "coverage-badge~=1.0"],
