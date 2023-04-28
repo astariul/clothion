@@ -7,9 +7,9 @@ from clothion import __version__
 app = FastAPI(title="Clothion", version=__version__, redoc_url=None)
 
 
-@app.get("/", tags=["API"])
-async def root():
-    return {"message": "Hello World"}
+@app.get("/version", tags=["API"])
+async def version() -> str:
+    return __version__
 
 
 def serve():
