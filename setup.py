@@ -7,18 +7,15 @@ with open("README.md", "r", encoding="utf-8") as f:
 with open("clothion/__init__.py") as f:
     v = [line for line in f if line.startswith("__version__")][0].split('"')[1]
 
-reqs = ["fastapi[all]~=0.95", "omegaconf~=2.3"]
+reqs = ["fastapi[all]~=0.95", "omegaconf~=2.3", "sqlalchemy~=2.0"]
 
 extras_require = {
+    "admin": ["alembic~=1.10"],
     "test": ["pytest~=7.0", "pytest-cov~=3.0", "coverage-badge~=1.0"],
-    "hook": ["pre-commit~=3.0"],
-    "lint": ["isort~=5.9", "black~=23.1", "flake518~=1.2", "darglint~=1.8"],
-    "docs": ["mkdocs-material~=9.0", "mkdocstrings[python]~=0.18", "mike~=1.1"],
+    "lint": ["isort~=5.12", "black~=23.3", "flake518~=1.5", "darglint~=1.8", "pre-commit~=3.2"],
 }
 extras_require["all"] = sum(extras_require.values(), [])
-extras_require["dev"] = (
-    extras_require["test"] + extras_require["hook"] + extras_require["lint"] + extras_require["docs"]
-)
+extras_require["dev"] = extras_require["test"] + extras_require["lint"]
 
 setuptools.setup(
     name="clothion",
@@ -34,8 +31,8 @@ setuptools.setup(
     extras_require=extras_require,
     entry_points={"console_scripts": ["clothion=clothion.app:serve"]},
     classifiers=[
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
 )
