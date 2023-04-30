@@ -11,7 +11,7 @@ reqs = ["fastapi[all]~=0.95", "omegaconf~=2.3", "sqlalchemy~=2.0"]
 
 extras_require = {
     "admin": ["alembic~=1.10"],
-    "test": ["pytest~=7.0", "pytest-cov~=3.0", "coverage-badge~=1.0"],
+    "test": ["pytest~=7.0", "pytest-cov>=3,<5", "coverage-badge~=1.0"],
     "lint": ["isort~=5.12", "black~=23.3", "flake518~=1.5", "darglint~=1.8", "pre-commit~=3.2"],
 }
 extras_require["all"] = sum(extras_require.values(), [])
