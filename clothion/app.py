@@ -40,6 +40,7 @@ def read_integration(integration_id: int, db: Session = Depends(get_db)):
     return db_integration
 
 
+# TODO : refactor to be a sub route of the one above
 @app.post("/{integration_id}/table", response_model=schemas.Table)
 def create_table_for_integration(integration_id: int, table: schemas.TableCreate, db: Session = Depends(get_db)):
     return crud.create_table(db=db, table=table, integration_id=integration_id)
@@ -52,7 +53,7 @@ def read_tables(integration_id: int, skip: int = 0, limit: int = 100, db: Sessio
 
 
 def serve():
-    if config.db == "local":
+    if config.db == "memory":
         crud.create_tables()
 
     uvicorn.run(app, host=config.host, port=config.port)

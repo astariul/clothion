@@ -4,7 +4,6 @@ from clothion.database import engine, models, schemas
 
 
 def create_tables():
-    print("creating tables...")
     models.Base.metadata.create_all(bind=engine)
 
 

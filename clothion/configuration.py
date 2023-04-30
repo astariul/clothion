@@ -7,7 +7,8 @@ from omegaconf.errors import ConfigKeyError
 USR_PATTERN = "<USERNAME>"
 PWD_PATTERN = "<PASSWORD>"
 DATABASE_PROFILES = {
-    "local": "sqlite://",
+    "memory": "sqlite://",
+    "local": "sqlite:///db.sql",
     "test": f"postgresql://{USR_PATTERN}:{PWD_PATTERN}@TODO/db",
     "prod": f"postgresql://{USR_PATTERN}:{PWD_PATTERN}@TODO/db",
 }
