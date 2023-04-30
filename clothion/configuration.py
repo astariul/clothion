@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 
 from omegaconf import OmegaConf as omg
+from omegaconf.errors import ConfigKeyError
 
 
 USR_PATTERN = "<USERNAME>"
 PWD_PATTERN = "<PASSWORD>"
 DATABASE_PROFILES = {
-    "local": "sqlite://?check_same_thread=False",
+    "local": "sqlite://",
     "test": f"postgresql://{USR_PATTERN}:{PWD_PATTERN}@TODO/db",
     "prod": f"postgresql://{USR_PATTERN}:{PWD_PATTERN}@TODO/db",
 }
@@ -25,10 +26,15 @@ class DefaultConfig:
     db_password: str = ""
 
 
-default_conf = omg.structured(DefaultConfig)
-cli_conf = omg.from_cli()
+config = omg.structured(DefaultConfig)
 
-config = omg.merge(default_conf, cli_conf)
+# Get any config from CLI, and try to merge it
+# If there is an error, ignore CLI (happens when calling another command, like alembic)
+cli_conf = omg.from_cli()
+try:
+    config = omg.merge(config, cli_conf)
+except ConfigKeyError:
+    pass
 
 # Replace username and password in the database URL from the given arguments
 config.db_url = DATABASE_PROFILES[config.db]
