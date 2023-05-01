@@ -1,4 +1,4 @@
-import sys
+import os
 
 import pytest
 from fastapi.testclient import TestClient
@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 # Before importing clothion, set some options specifically for testing
 # Importing clothion will load the configuration, so this should be done before !
-sys.argv.append("db=memory")
+os.environ["CLOTHION_DB"] = "memory"
 
 
 import clothion  # noqa: E402

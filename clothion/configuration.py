@@ -14,6 +14,9 @@ DATABASE_PROFILES = {
 }
 
 
+omg.register_new_resolver("db_url", lambda profile_name: DATABASE_PROFILES[profile_name])
+
+
 @dataclass
 class DefaultConfig:
     # Server
@@ -21,10 +24,10 @@ class DefaultConfig:
     port: int = 8000
 
     # Database
-    db: str = "local"
-    db_url: str = f"{DATABASE_PROFILES[db]}"
-    db_username: str = ""
-    db_password: str = ""
+    db: str = "${oc.env:CLOTHION_DB,local}"
+    db_url: str = "${db_url:${db}}"
+    db_username: str = "${oc.env:CLOTHION_DB_USR,''}"
+    db_password: str = "${oc.env:CLOTHION_DB_PWD,''}"
 
 
 config = omg.structured(DefaultConfig)
