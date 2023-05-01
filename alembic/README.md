@@ -40,7 +40,26 @@ Then, run the migration by specifying the revision number. Alternatively, you ca
 alembic upgrade head
 ```
 
-## Others
+## Selecting the DB
+
+To choose on which DB `alembic` will run, you can use the environment variable `CLOTHION_DB`. It can take one of the following value :
+
+* `memory` : In-memory database, used for unit-tests. No need to use Alembic for this DB.
+* `local` : SQLite database (file-based), for local development.
+* `test` : Test DB.
+* `prod` : Production DB.
+
+For databases that requires authentication, you can provide the username and the password with the environment variables `CLOTHION_DB_USR` and `CLOTHION_DB_PWD`.
+
+---
+
+Example for running `alembic` on the test DB :
+
+```console
+CLOTHION_DB=test CLOTHION_DB_USR=xxx CLOTHION_DB_PWD=xxx alembic upgrade head
+```
+
+## Other commands
 
 View the current revision with :
 
