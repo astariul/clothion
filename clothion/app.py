@@ -43,7 +43,10 @@ def read_integration(integration_id: int, db: Session = Depends(get_db)):
 # TODO : refactor to be a sub route of the one above
 @app.post("/{integration_id}/table", response_model=schemas.Table)
 def create_table_for_integration(integration_id: int, table: schemas.TableCreate, db: Session = Depends(get_db)):
-    return crud.create_table(db=db, table=table, integration_id=integration_id)
+    db_table = crud.get_table_by_table_id(db, integration_id=integration_id, table_id=table.table_id)
+    if not db_table:
+        db_table = crud.create_table(db=db, table=table, integration_id=integration_id)
+    return db_table
 
 
 @app.get("/{integration_id}/tables", response_model=List[schemas.Table])

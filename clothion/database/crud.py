@@ -61,6 +61,15 @@ def create_integration(db: Session, integration: schemas.IntegrationCreate):
     return db_integration
 
 
+def get_table_by_table_id(db: Session, integration_id: int, table_id: int):
+    return (
+        db.query(models.Table)
+        .filter(models.Table.integration_id == integration_id)
+        .filter(models.Table.table_id == table_id)
+        .first()
+    )
+
+
 def get_table(db: Session, integration_id: int, id: int):
     return (
         db.query(models.Table)
