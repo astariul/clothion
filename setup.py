@@ -27,6 +27,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/astariul/clothion",
     packages=setuptools.find_packages(),
+    package_data={"clothion": ["templates/*"]},
     install_requires=reqs,
     extras_require=extras_require,
     entry_points={"console_scripts": ["clothion=clothion.app:serve"]},

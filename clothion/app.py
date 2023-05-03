@@ -1,7 +1,10 @@
+import pathlib
 from typing import List
 
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from clothion import __version__, config
@@ -10,6 +13,8 @@ from clothion.database import SessionLocal, crud, schemas
 
 app = FastAPI(title="Clothion", version=__version__, redoc_url=None)
 
+templates = Jinja2Templates(directory=pathlib.Path(__file__).parent / "templates")
+
 
 def get_db():
     db = SessionLocal()
@@ -17,6 +22,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@app.get("/", response_class=HTMLResponse)
+async def welcome(request: Request):
+    return templates.TemplateResponse("welcome.html", {"request": request, "id": 3})
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(pathlib.Path(__file__).parent / "templates" / "logo.svg")
 
 
 @app.get("/version", tags=["API"])
