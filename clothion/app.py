@@ -1,4 +1,5 @@
 import pathlib
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from typing import Annotated
 
 import uvicorn
@@ -9,6 +10,10 @@ from sqlalchemy.orm import Session
 
 from clothion import __version__, config
 from clothion.database import SessionLocal, crud
+
+
+N_BYTES = 4
+ENDIAN = "big"
 
 
 app = FastAPI(title="Clothion", version=__version__, redoc_url=None)
@@ -40,7 +45,7 @@ async def version() -> str:
 
 
 @app.post("/create")
-def create(integration: Annotated[str, Form()], table: Annotated[str, Form()], db: Session = Depends(get_db)) -> int:
+def create(integration: Annotated[str, Form()], table: Annotated[str, Form()], db: Session = Depends(get_db)):
     db_integration = crud.get_integration_by_token(db, token=integration)
     if not db_integration:
         # If the Integration doesn't exist, create it and create the table directly
@@ -53,13 +58,26 @@ def create(integration: Annotated[str, Form()], table: Annotated[str, Form()], d
         if not db_table:
             db_table = crud.create_table(db=db, integration_id=db_integration.id, table_id=table)
 
-    return RedirectResponse(f"/{db_integration.id}/{db_table.id}", status_code=301)
+    # To have smaller URL, encode the IDs in base64
+    # Because our ID are on 4 bytes, we can remove the base64 padding ("==") at the end
+    integration_b64 = urlsafe_b64encode(db_integration.id.to_bytes(N_BYTES, ENDIAN)).decode()[:-2]
+    table_b64 = urlsafe_b64encode(db_table.id.to_bytes(N_BYTES, ENDIAN)).decode()[:-2]
+
+    return RedirectResponse(f"/{integration_b64}/{table_b64}", status_code=301)
 
 
-@app.get("/{integration_id}/{table_id}", response_class=HTMLResponse)
-def widget(request: Request, integration_id: int, table_id: int):
+@app.get("/{integration_b64}/{table_b64}", response_class=HTMLResponse)
+def widget(request: Request, integration_b64: str, table_b64: str, db: Session = Depends(get_db)):
+    # Decode the base64 to get the IDs of the integration and table
+    integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
+    table_id = int.from_bytes(urlsafe_b64decode((table_b64 + "==").encode()), ENDIAN)
+
+    # Retrieve the contents of this integration and table from the DB
+    db_integration = crud.get_integration(db=db, id=integration_id)
+    db_table = crud.get_table(db=db, integration_id=integration_id, id=table_id)
+
     return templates.TemplateResponse(
-        "widget.html", {"request": request, "integration_id": integration_id, "table_id": table_id}
+        "widget.html", {"request": request, "integration_id": db_integration.token, "table_id": db_table.table_id}
     )
 
 
