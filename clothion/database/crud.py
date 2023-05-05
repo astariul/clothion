@@ -79,10 +79,6 @@ def get_table(db: Session, integration_id: int, id: int):
     )
 
 
-def get_tables_of(db: Session, integration_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Table).filter(models.Table.integration_id == integration_id).offset(skip).limit(limit).all()
-
-
 def create_table(db: Session, integration_id: int, table_id: str):
     # Create a random ID that doesn't exist on the table yet
     random_id = generate_random_unique_id(lambda i: get_table(db=db, integration_id=integration_id, id=i) is None)
