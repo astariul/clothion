@@ -5,6 +5,7 @@ __pycache__/
 
 # Setup
 *.egg-info/
+*.DS_Store
 
 # Coverage output
 .coverage
