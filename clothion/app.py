@@ -1,12 +1,14 @@
+import binascii
 import pathlib
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from typing import Annotated
 
 import uvicorn
-from fastapi import Depends, FastAPI, Form, Request
+from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from clothion import __version__, config
 from clothion.database import SessionLocal, crud
@@ -27,6 +29,11 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request, exc):
+    return templates.TemplateResponse("404.html", {"request": request})
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -69,12 +76,18 @@ def create(integration: Annotated[str, Form()], table: Annotated[str, Form()], d
 @app.get("/{integration_b64}/{table_b64}", response_class=HTMLResponse)
 def widget(request: Request, integration_b64: str, table_b64: str, db: Session = Depends(get_db)):
     # Decode the base64 to get the IDs of the integration and table
-    integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
-    table_id = int.from_bytes(urlsafe_b64decode((table_b64 + "==").encode()), ENDIAN)
+    try:
+        integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
+        table_id = int.from_bytes(urlsafe_b64decode((table_b64 + "==").encode()), ENDIAN)
+    except binascii.Error:
+        raise HTTPException(status_code=404)
 
     # Retrieve the contents of this integration and table from the DB
     db_integration = crud.get_integration(db=db, id=integration_id)
     db_table = crud.get_table(db=db, integration_id=integration_id, id=table_id)
+
+    if db_integration is None or db_table is None:
+        raise HTTPException(status_code=404)
 
     return templates.TemplateResponse(
         "widget.html", {"request": request, "integration_id": db_integration.token, "table_id": db_table.table_id}
