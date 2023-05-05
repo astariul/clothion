@@ -50,12 +50,12 @@ def test_create_new_integration_new_table(client):
     assert response.history[0].status_code == 301
     assert response.status_code == 200
 
-    # The redirected resource path has both the integration ID and the table ID
+    # The redirected resource path has both the integration ID and the table ID, base64-encoded
     url_parts = response.url.path.strip("/").split("/")
     assert len(url_parts) == 2
     integration_id, table_id = url_parts
-    assert integration_id.isdigit()
-    assert table_id.isdigit()
+    assert len(integration_id) == 6
+    assert len(table_id) == 6
 
 
 def test_create_existing_integration_existing_table(client):
