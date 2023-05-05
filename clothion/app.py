@@ -33,7 +33,7 @@ def get_db():
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc):
-    return templates.TemplateResponse("404.html", {"request": request})
+    return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
 
 
 @app.get("/", response_class=HTMLResponse)

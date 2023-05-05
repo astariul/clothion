@@ -110,3 +110,15 @@ def test_create_new_integration_existing_table(client):
     integration_id_2, table_id_2 = response.url.path.strip("/").split("/")
     assert integration_id != integration_id_2
     assert table_id != table_id_2
+
+
+def test_access_inexisting_resource(client):
+    # First, create an integration and a table
+    response = client.post("/000000/000000")
+    assert response.status_code == 404
+
+
+def test_access_wrong_b64_resource(client):
+    # First, create an integration and a table
+    response = client.post("/1/1")
+    assert response.status_code == 404
