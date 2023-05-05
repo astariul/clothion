@@ -1,14 +1,14 @@
 import pathlib
-from typing import Annotated, List
+from typing import Annotated
 
 import uvicorn
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
+from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from clothion import __version__, config
-from clothion.database import SessionLocal, crud, schemas
+from clothion.database import SessionLocal, crud
 
 
 app = FastAPI(title="Clothion", version=__version__, redoc_url=None)
@@ -61,40 +61,6 @@ def widget(request: Request, integration_id: int, table_id: int):
     return templates.TemplateResponse(
         "widget.html", {"request": request, "integration_id": integration_id, "table_id": table_id}
     )
-
-
-#  ################ TODO : clean the following routes
-
-
-@app.post("/integration", response_model=schemas.Integration)
-def create_integration(integration: schemas.IntegrationCreate, db: Session = Depends(get_db)):
-    db_integration = crud.get_integration_by_token(db, token=integration.token)
-    if not db_integration:
-        db_integration = crud.create_integration(db=db, integration=integration)
-    return db_integration
-
-
-@app.get("/{integration_id}", response_model=schemas.Integration)
-def read_integration(integration_id: int, db: Session = Depends(get_db)):
-    db_integration = crud.get_integration(db, id=integration_id)
-    if db_integration is None:
-        raise HTTPException(status_code=404, detail="Integration not found")
-    return db_integration
-
-
-# TODO : refactor to be a sub route of the one above
-@app.post("/{integration_id}/table", response_model=schemas.Table)
-def create_table_for_integration(integration_id: int, table: schemas.TableCreate, db: Session = Depends(get_db)):
-    db_table = crud.get_table_by_table_id(db, integration_id=integration_id, table_id=table.table_id)
-    if not db_table:
-        db_table = crud.create_table(db=db, table=table, integration_id=integration_id)
-    return db_table
-
-
-@app.get("/{integration_id}/tables", response_model=List[schemas.Table])
-def read_tables(integration_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    tables = crud.get_tables_of(db, integration_id=integration_id, skip=skip, limit=limit)
-    return tables
 
 
 def serve():

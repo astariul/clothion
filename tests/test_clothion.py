@@ -20,17 +20,19 @@ def client():
     yield TestClient(clothion.app)
 
 
-@pytest.fixture
-def integration_id(client):
-    # Register an integration
-    integration = {"token": "secret_fixture"}
-    response = client.post("/integration", json=integration)
-    assert response.status_code == 200
-    return response.json()["id"]
-
-
 def test_package_has_version():
     assert len(clothion.__version__) > 0
+
+
+def test_home_route(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "<form" in response.text
+
+
+def test_favion(client):
+    response = client.get("/favicon.ico")
+    assert response.status_code == 200
 
 
 def test_version_route(client):
@@ -39,84 +41,72 @@ def test_version_route(client):
     assert response.json() == clothion.__version__
 
 
-def test_register_integration_basic(client):
-    integration = {"token": "secret#1"}
-    response = client.post("/integration", json=integration)
+def test_create_new_integration_new_table(client):
+    form_data = {"integration": "token#1", "table": "id#1"}
+    response = client.post("/create", data=form_data)
 
-    assert response.status_code == 200
-    res = response.json()
-    assert res["token"] == integration["token"]
-    assert isinstance(res["id"], int)
-    assert isinstance(res["tables"], list) and len(res["tables"]) == 0
-
-
-def test_register_integration_exists_already(client):
-    # Register an integration
-    integration = {"token": "secret#2"}
-    response = client.post("/integration", json=integration)
+    # We have one redirection, leading to our newly created resource
+    assert len(response.history) == 1
+    assert response.history[0].status_code == 301
     assert response.status_code == 200
 
-    # Try to register it again
-    response = client.post("/integration", json=integration)
+    # The redirected resource path has both the integration ID and the table ID
+    url_parts = response.url.path.strip("/").split("/")
+    assert len(url_parts) == 2
+    integration_id, table_id = url_parts
+    assert integration_id.isdigit()
+    assert table_id.isdigit()
 
+
+def test_create_existing_integration_existing_table(client):
+    # First, create an integration and a table
+    form_data = {"integration": "token#2", "table": "id#2"}
+    response = client.post("/create", data=form_data)
     assert response.status_code == 200
-    res = response.json()
-    assert res["token"] == integration["token"]
-    assert isinstance(res["id"], int)
-    assert isinstance(res["tables"], list) and len(res["tables"]) == 0
+    integration_id, table_id = response.url.path.strip("/").split("/")
 
+    # Then, try to recreate the exact same integration and table
+    response = client.post("/create", data=form_data)
 
-def test_read_integration_basic(client):
-    # Register an integration
-    integration = {"token": "secret#3"}
-    response = client.post("/integration", json=integration)
+    # We should receive the exact same IDs
     assert response.status_code == 200
-    integration_id = response.json()["id"]
+    integration_id_2, table_id_2 = response.url.path.strip("/").split("/")
+    assert integration_id == integration_id_2
+    assert table_id == table_id_2
 
-    # Read it
-    response = client.get(f"/{integration_id}")
+
+def test_create_existing_integration_new_table(client):
+    # First, create an integration and a table
+    form_data = {"integration": "token#3", "table": "id#3"}
+    response = client.post("/create", data=form_data)
     assert response.status_code == 200
-    res = response.json()
-    assert res["token"] == integration["token"]
-    assert res["id"] == integration_id
-    assert isinstance(res["tables"], list) and len(res["tables"]) == 0
+    integration_id, table_id = response.url.path.strip("/").split("/")
 
+    # Then, try to create a new table for the same integration
+    form_data["table"] = "id#3-2"
+    response = client.post("/create", data=form_data)
 
-def test_read_integration_not_existing(client):
-    response = client.get("/99999")
-    assert response.status_code == 404
-
-
-def test_register_table_basic(client, integration_id):
-    table = {"table_id": "table#1"}
-    response = client.post(f"/{integration_id}/table", json=table)
-
+    # We should receive the same ID for the integration, but a new ID for the table
     assert response.status_code == 200
-    res = response.json()
-    assert res["table_id"] == table["table_id"]
-    assert isinstance(res["id"], int)
-    assert res["integration_id"] == integration_id
+    integration_id_2, table_id_2 = response.url.path.strip("/").split("/")
+    assert integration_id == integration_id_2
+    assert table_id != table_id_2
 
 
-def test_read_tables_basic(client, integration_id):
-    # Register 2 tables
-    table_1 = {"table_id": "table#2"}
-    response = client.post(f"/{integration_id}/table", json=table_1)
+def test_create_new_integration_existing_table(client):
+    # First, create an integration and a table
+    form_data = {"integration": "token#4", "table": "id#4"}
+    response = client.post("/create", data=form_data)
     assert response.status_code == 200
-    table_1["id"] = response.json()["id"]
-    table_1["integration_id"] = integration_id
+    integration_id, table_id = response.url.path.strip("/").split("/")
 
-    table_2 = {"table_id": "table#3"}
-    response = client.post(f"/{integration_id}/table", json=table_2)
+    # Then, try to create a new integration but the same table
+    form_data["integration"] = "token#4-2"
+    response = client.post("/create", data=form_data)
+
+    # We should receive different ID for both the integration and the table
+    # (because the table belong to a different integration !)
     assert response.status_code == 200
-    table_2["id"] = response.json()["id"]
-    table_2["integration_id"] = integration_id
-
-    # Read the tables
-    response = client.get(f"/{integration_id}/tables")
-
-    assert response.status_code == 200
-    res = response.json()
-    assert len(res) >= 2
-    assert table_1 in res
-    assert table_2 in res
+    integration_id_2, table_id_2 = response.url.path.strip("/").split("/")
+    assert integration_id != integration_id_2
+    assert table_id != table_id_2
