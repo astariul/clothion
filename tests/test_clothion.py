@@ -27,7 +27,7 @@ def test_package_has_version():
 def test_home_route(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert "<form" in response.text
+    assert response.template.name == "welcome.html"
 
 
 def test_favion(client):
@@ -113,12 +113,12 @@ def test_create_new_integration_existing_table(client):
 
 
 def test_access_inexisting_resource(client):
-    # First, create an integration and a table
     response = client.post("/000000/000000")
     assert response.status_code == 404
+    assert response.template.name == "404.html"
 
 
 def test_access_wrong_b64_resource(client):
-    # First, create an integration and a table
     response = client.post("/1/1")
     assert response.status_code == 404
+    assert response.template.name == "404.html"
