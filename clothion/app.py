@@ -41,12 +41,12 @@ async def http_exception_handler(request, exc):
     return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", tags=["HTML"], response_class=HTMLResponse)
 async def welcome(request: Request):
     return templates.TemplateResponse("welcome.html", {"request": request})
 
 
-@app.get("/favicon.ico", include_in_schema=False)
+@app.get("/favicon.ico", tags=["HTML"], include_in_schema=False)
 async def favicon():
     return FileResponse(pathlib.Path(__file__).parent / "templates" / "logo.svg")
 
@@ -56,7 +56,7 @@ async def version() -> str:
     return __version__
 
 
-@app.post("/create")
+@app.post("/create", tags=["Forms"])
 def create(integration: Annotated[str, Form()], table: Annotated[str, Form()], db: Session = Depends(get_db)):
     db_integration = crud.get_integration_by_token(db, token=integration)
     if not db_integration:
@@ -78,7 +78,7 @@ def create(integration: Annotated[str, Form()], table: Annotated[str, Form()], d
     return RedirectResponse(f"/{integration_b64}/{table_b64}", status_code=301)
 
 
-@app.get("/{integration_b64}/{table_b64}", response_class=HTMLResponse)
+@app.get("/{integration_b64}/{table_b64}", tags=["HTML"], response_class=HTMLResponse)
 def widget(request: Request, integration_b64: str, table_b64: str, db: Session = Depends(get_db)):
     # Decode the base64 to get the IDs of the integration and table
     try:
@@ -99,7 +99,7 @@ def widget(request: Request, integration_b64: str, table_b64: str, db: Session =
     )
 
 
-@app.get("/{integration_b64}/{table_b64}/data")
+@app.get("/{integration_b64}/{table_b64}/data", tags=["API"])
 def data(request: Request, integration_b64: str, table_b64: str, db: Session = Depends(get_db)):
     # Decode the base64 to get the IDs of the integration and table
     try:
