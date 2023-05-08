@@ -29,6 +29,7 @@ class Element(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     last_edited = Column(DateTime)
+    notion_id = Column(String, unique=True, index=True)
     table_id = Column(Integer, ForeignKey("tables.id"))
 
     table = relationship("Table", back_populates="elements")
