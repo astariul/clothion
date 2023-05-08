@@ -7,8 +7,9 @@ import uvicorn
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from notion_client import Client
+from notion_client.helpers import iterate_paginated_api
 from sqlalchemy.orm import Session
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from clothion import __version__, config
 from clothion.database import SessionLocal, crud
@@ -31,7 +32,11 @@ def get_db():
         db.close()
 
 
-@app.exception_handler(StarletteHTTPException)
+class PageNotFound(Exception):
+    pass
+
+
+@app.exception_handler(PageNotFound)
 async def http_exception_handler(request, exc):
     return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
 
@@ -80,6 +85,27 @@ def widget(request: Request, integration_b64: str, table_b64: str, db: Session =
         integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
         table_id = int.from_bytes(urlsafe_b64decode((table_b64 + "==").encode()), ENDIAN)
     except binascii.Error:
+        raise PageNotFound()
+
+    # Retrieve the contents of this integration and table from the DB
+    db_integration = crud.get_integration(db=db, id=integration_id)
+    db_table = crud.get_table(db=db, integration_id=integration_id, id=table_id)
+
+    if db_integration is None or db_table is None:
+        raise PageNotFound()
+
+    return templates.TemplateResponse(
+        "widget.html", {"request": request, "integration_id": db_integration.token, "table_id": db_table.table_id}
+    )
+
+
+@app.get("/{integration_b64}/{table_b64}/data")
+def data(request: Request, integration_b64: str, table_b64: str, db: Session = Depends(get_db)):
+    # Decode the base64 to get the IDs of the integration and table
+    try:
+        integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
+        table_id = int.from_bytes(urlsafe_b64decode((table_b64 + "==").encode()), ENDIAN)
+    except binascii.Error:
         raise HTTPException(status_code=404)
 
     # Retrieve the contents of this integration and table from the DB
@@ -89,9 +115,14 @@ def widget(request: Request, integration_b64: str, table_b64: str, db: Session =
     if db_integration is None or db_table is None:
         raise HTTPException(status_code=404)
 
-    return templates.TemplateResponse(
-        "widget.html", {"request": request, "integration_id": db_integration.token, "table_id": db_table.table_id}
-    )
+    # Get the data from the Notion API
+    notion = Client(auth=db_integration.token)
+    properties = []
+    for block in iterate_paginated_api(notion.databases.query, database_id=db_table.table_id):
+        for b in block:
+            properties.append(b["properties"])
+
+    return properties
 
 
 def serve():

@@ -113,12 +113,12 @@ def test_create_new_integration_existing_table(client):
 
 
 def test_access_inexisting_resource(client):
-    response = client.post("/000000/000000")
+    response = client.get("/000000/000000")
     assert response.status_code == 404
     assert response.template.name == "404.html"
 
 
 def test_access_wrong_b64_resource(client):
-    response = client.post("/1/1")
+    response = client.get("/1/1")
     assert response.status_code == 404
     assert response.template.name == "404.html"
