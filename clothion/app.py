@@ -7,11 +7,9 @@ import uvicorn
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from notion_client import Client
-from notion_client.helpers import iterate_paginated_api
 from sqlalchemy.orm import Session
 
-from clothion import __version__, config
+from clothion import __version__, config, notion_cache
 from clothion.database import SessionLocal, crud
 
 
@@ -115,14 +113,7 @@ def data(request: Request, integration_b64: str, table_b64: str, db: Session = D
     if db_integration is None or db_table is None:
         raise HTTPException(status_code=404)
 
-    # Get the data from the Notion API
-    notion = Client(auth=db_integration.token)
-    properties = []
-    for block in iterate_paginated_api(notion.databases.query, database_id=db_table.table_id):
-        for b in block:
-            properties.append(b["properties"])
-
-    return properties
+    return notion_cache.get_data(db, db_integration.token, db_table.table_id)
 
 
 def serve():
