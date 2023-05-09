@@ -1,6 +1,7 @@
 import uuid
-from typing import Callable
+from typing import Callable, Dict
 
+from dateutil.parser import isoparse
 from sqlalchemy.orm import Session
 
 from clothion.database import engine, models
@@ -79,6 +80,16 @@ def get_table(db: Session, integration_id: int, id: int):
     )
 
 
+def get_table_by_token_and_table_id(db: Session, token: str, table_id: str):
+    return (
+        db.query(models.Table)
+        .join(models.Integration)
+        .filter(models.Integration.token == token)
+        .filter(models.Table.table_id == table_id)
+        .first()
+    )
+
+
 def create_table(db: Session, integration_id: int, table_id: str):
     # Create a random ID that doesn't exist on the table yet
     random_id = generate_random_unique_id(lambda i: get_table(db=db, integration_id=integration_id, id=i) is None)
@@ -88,3 +99,147 @@ def create_table(db: Session, integration_id: int, table_id: str):
     db.commit()
     db.refresh(db_table)
     return db_table
+
+
+def last_table_element(db: Session, token: str, table_id: str):
+    return (
+        db.query(models.Element)
+        .join(models.Table)
+        .join(models.Integration)
+        .filter(models.Integration.token == token)
+        .filter(models.Table.table_id == table_id)
+        .order_by(models.Element.last_edited.desc())
+        .first()
+    )
+
+
+def get_element_by_notion_id(db: Session, notion_id: str):
+    return db.query(models.Element).filter(models.Element.notion_id == notion_id).first()
+
+
+def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, type: str = None) -> models.Base:  # noqa: C901
+    """Helper function converting an attribute coming from the Notion API into
+    a DB row corresponding to the right type.
+
+    Args:
+        name (str): Name of the attribute.
+        attr (Dict): Content of the attribute (from Notion API).
+        element_id (int): ID of the element this attribute belongs to (for
+            linking).
+        type (str): Type of this attribute. If `None`, uses the type as
+            described in the attribute's content. Defaults to `None`.
+
+    Returns:
+        models.Base: The DB row to add.
+    """
+    if type is None:
+        type = attr["type"]
+
+    kwargs = {"name": name, "type": type, "element_id": element_id}
+
+    if attr["type"] == "title":
+        db_attr = models.StringAttribute(value="".join(t["plain_text"] for t in attr["title"]), **kwargs)
+    elif attr["type"] == "checkbox":
+        db_attr = models.BooleanAttribute(value=attr["checkbox"], **kwargs)
+    elif attr["type"] == "rich_text":
+        db_attr = models.StringAttribute(value="".join(t["plain_text"] for t in attr["rich_text"]), **kwargs)
+    elif attr["type"] == "number":
+        db_attr = models.NumberAttribute(value=attr["number"], **kwargs)
+    elif attr["type"] == "select":
+        db_attr = models.StringAttribute(value=attr["select"]["name"], **kwargs)
+    elif attr["type"] == "multi_select":
+        # Special case, the values will be contained in another table !
+        db_attr = models.MultiAttribute(**kwargs)
+    elif attr["type"] == "status":
+        db_attr = models.StringAttribute(value=attr["status"]["name"], **kwargs)
+    elif attr["type"] == "date":
+        db_attr = models.DateAttribute(value=isoparse(attr["date"]["start"]), **kwargs)
+    elif attr["type"] == "people":
+        db_attr = models.StringAttribute(value=attr["people"]["id"], **kwargs)
+    elif attr["type"] == "files":
+        # Special case, the values will be contained in another table !
+        db_attr = models.MultiAttribute(**kwargs)
+    elif attr["type"] == "url":
+        db_attr = models.StringAttribute(value=attr["url"], **kwargs)
+    elif attr["type"] == "email":
+        db_attr = models.StringAttribute(value=attr["email"], **kwargs)
+    elif attr["type"] == "phone_number":
+        db_attr = models.StringAttribute(value=attr["phone_number"], **kwargs)
+    elif attr["type"] == "formula":
+        # Formula is special, the underlying data can be any type !
+        db_attr = notion_attr_to_db_attr(name, attr["formula"], element_id, "formula")
+    elif attr["type"] == "relation" or attr["type"] == "rollup":
+        db_attr = None
+    elif attr["type"] == "created_time":
+        db_attr = models.DateAttribute(value=isoparse(attr["created_time"]), **kwargs)
+    elif attr["type"] == "created_by":
+        db_attr = models.StringAttribute(value=attr["created_by"]["id"], **kwargs)
+    elif attr["type"] == "last_edited_time":
+        db_attr = models.DateAttribute(value=isoparse(attr["last_edited_time"]), **kwargs)
+    elif attr["type"] == "last_edited_by":
+        db_attr = models.StringAttribute(value=attr["last_edited_by"]["id"], **kwargs)
+
+    return db_attr
+
+
+def create_attribute(db: Session, name: str, attr: Dict, element_id: int):
+    db_attr = notion_attr_to_db_attr(name, attr, element_id)
+    db.add(db_attr)
+    db.commit()
+
+    # Special case, for attributes with multiple values, we need to add the
+    # values in a different table as well !
+    if attr["type"] == "files" or attr["type"] == "multi_select":
+        db.refresh(db_attr)
+
+        for value in attr[attr["type"]]:
+            db_attr_part = models.MultiPartString(text=value["name"], multiattribute_id=db_attr.id)
+            db.add(db_attr_part)
+
+        db.commit()
+
+
+def create_element(db: Session, notion_id: str, table_id: str, last_edited: str, attributes: Dict):
+    # First, create the element
+    db_element = models.Element(table_id=table_id, notion_id=notion_id, last_edited=isoparse(last_edited))
+    db.add(db_element)
+    db.commit()
+    db.refresh(db_element)
+
+    # Then, create each attribute of the element
+    for name, attr in attributes.items():
+        create_attribute(db, name, attr, db_element.id)
+
+    db.refresh(db_element)
+    return db_element
+
+
+def update_element(db: Session, db_element: models.Element, last_edited: str, attributes: Dict):
+    # Update the element itself
+    db_element.last_edited = isoparse(last_edited)
+    db.commit()
+
+    # Delete all of its previous attribute
+    db.query(models.BooleanAttribute).filter(models.BooleanAttribute.element_id == db_element.id).delete()
+    db.query(models.DateAttribute).filter(models.DateAttribute.element_id == db_element.id).delete()
+    db.query(models.NumberAttribute).filter(models.NumberAttribute.element_id == db_element.id).delete()
+    db.query(models.StringAttribute).filter(models.StringAttribute.element_id == db_element.id).delete()
+    db.query(models.MultiAttribute).filter(models.MultiAttribute.element_id == db_element.id).delete()
+
+    # Recreate the attributes from the updated values
+    for name, attr in attributes.items():
+        create_attribute(db, name, attr, db_element.id)
+
+    db.refresh(db_element)
+    return db_element
+
+
+def get_elements_of_table(db: Session, token: str, table_id: str):
+    return (
+        db.query(models.Element)
+        .join(models.Table)
+        .join(models.Integration)
+        .filter(models.Integration.token == token)
+        .filter(models.Table.table_id == table_id)
+        .all()
+    )

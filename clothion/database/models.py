@@ -97,7 +97,7 @@ class MultiAttribute(Base):
     element_id = Column(Integer, ForeignKey("elements.id"))
 
     element = relationship("Element", back_populates="multi_attributes")
-    parts = relationship("MultiPartString", back_populates="multi")
+    parts = relationship("MultiPartString", back_populates="multi", passive_deletes=True)
 
 
 class MultiPartString(Base):
@@ -105,6 +105,6 @@ class MultiPartString(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     text = Column(String)
-    multiattribute_id = Column(Integer, ForeignKey("multis.id"))
+    multiattribute_id = Column(Integer, ForeignKey("multis.id", ondelete="CASCADE"))
 
     multi = relationship("MultiAttribute", back_populates="parts")
