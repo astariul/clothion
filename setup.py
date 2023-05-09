@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 with open("clothion/__init__.py") as f:
     v = [line for line in f if line.startswith("__version__")][0].split('"')[1]
 
-reqs = ["fastapi[all]~=0.95", "omegaconf~=2.3", "sqlalchemy~=2.0", "notion-client~=2.0"]
+reqs = ["fastapi[all]~=0.95", "omegaconf~=2.3", "sqlalchemy~=2.0", "notion-client~=2.0", "python-dateutil~=2.8"]
 
 extras_require = {
     "admin": ["alembic~=1.10"],
