@@ -137,3 +137,10 @@ def test_access_data_of_freshly_created_table(client):
     assert len(data) == 2
     assert {"my_title": "Element 1", "price": 56} in data
     assert {"my_title": "Element 2", "price": 98} in data
+
+
+def test_access_data_handle_api_error(client):
+    integration_id, table_id = create_table(client, "token#5", "table_api_error")
+
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 404

@@ -7,6 +7,7 @@ import uvicorn
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from notion_client import APIResponseError
 from sqlalchemy.orm import Session
 
 from clothion import __version__, config, notion_cache
@@ -113,7 +114,10 @@ def data(integration_b64: str, table_b64: str, reset_cache: bool = False, db: Se
     if db_integration is None or db_table is None:
         raise HTTPException(status_code=404)
 
-    return notion_cache.get_data(db, db_integration.token, db_table.table_id, reset_cache=reset_cache)
+    try:
+        return notion_cache.get_data(db, db_integration.token, db_table.table_id, reset_cache=reset_cache)
+    except APIResponseError:
+        raise HTTPException(status_code=404)
 
 
 def serve():

@@ -1,6 +1,7 @@
 import uuid
 from typing import Dict, Union
 
+import httpx
 import notion_client
 
 
@@ -77,6 +78,8 @@ class MockDBQuery:
             response.add_element(my_title=title("Element 1"), price=number(56))
             response.add_element(my_title=title("Element 2"), price=number(98))
             return response.get()
+        if database_id == "table_api_error":
+            raise notion_client.APIResponseError(httpx.Response(401), "", "")
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 
