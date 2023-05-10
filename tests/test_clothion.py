@@ -3,6 +3,9 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
+from . import mock_notion_api  # noqa: F401 (just importing it will monkey-patch the notion API !)
+from .utils import create_table
+
 
 # Before importing clothion, set some options specifically for testing
 # Importing clothion will load the configuration, so this should be done before !
@@ -122,3 +125,15 @@ def test_access_wrong_b64_resource(client):
     response = client.get("/1/1")
     assert response.status_code == 404
     assert response.template.name == "404.html"
+
+
+def test_access_data_of_freshly_created_table(client):
+    integration_id, table_id = create_table(client, "token#5", "table_with_basic_data")
+
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 98} in data
