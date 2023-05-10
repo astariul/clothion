@@ -140,7 +140,70 @@ def test_access_data_of_freshly_created_table(client):
 
 
 def test_access_data_handle_api_error(client):
-    integration_id, table_id = create_table(client, "token#5", "table_api_error")
+    integration_id, table_id = create_table(client, "token#6", "table_api_error")
 
     response = client.get(f"/{integration_id}/{table_id}/data")
     assert response.status_code == 404
+
+
+def test_access_data_cached_after_first_call(client):
+    integration_id, table_id = create_table(client, "token#7", "table_2nd_call_no_data")
+
+    # First call populate the cache
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 98} in data
+
+    # Second call to Notion API returns nothing, but we still get full data
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 98} in data
+
+
+def test_access_data_new_element_on_second_call(client):
+    integration_id, table_id = create_table(client, "token#8", "table_2nd_call_new_data")
+
+    # First call get the basic data
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 98} in data
+
+    # Second call assume user added an element later, so Notion API returns it
+    # and we should get the full, updated data
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 98} in data
+    assert {"my_title": "Element 3", "price": -22} in data
+
+
+def test_access_data_updated_element_on_second_call(client):
+    integration_id, table_id = create_table(client, "token#9", "table_2nd_call_updated_data")
+
+    # First call get the basic data
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 98} in data
+
+    # Second call assume user updated an element later, so Notion API returns
+    # it and we should get the updated data
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 0} in data

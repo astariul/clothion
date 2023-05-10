@@ -78,8 +78,40 @@ class MockDBQuery:
             response.add_element(my_title=title("Element 1"), price=number(56))
             response.add_element(my_title=title("Element 2"), price=number(98))
             return response.get()
-        if database_id == "table_api_error":
+        elif database_id == "table_api_error":
             raise notion_client.APIResponseError(httpx.Response(401), "", "")
+        elif database_id == "table_2nd_call_no_data":
+            if "filter" not in kwargs:
+                # First call
+                return self.query("table_with_basic_data")
+            else:
+                # Second call
+                return FakeResponse().get()
+        elif database_id == "table_2nd_call_new_data":
+            if "filter" not in kwargs:
+                # First call
+                return self.query("table_with_basic_data")
+            else:
+                # Second call
+                response = FakeResponse()
+                response.add_element(my_title=title("Element 3"), price=number(-22))
+                return response.get()
+        elif database_id == "table_2nd_call_updated_data":
+            if "filter" not in kwargs:
+                # First call
+                response = FakeResponse()
+                response.add_element(my_title=title("Element 1"), price=number(56))
+                response.add_element(my_title=title("Element 2"), price=number(98))
+                # Fix the element ID to be able to modify it on second call
+                response.query["results"][1]["id"] = "6c67da52-3a1b-4673-9d59-3e6cb94c142b"
+                return response.get()
+            else:
+                # Second call
+                response = FakeResponse()
+                response.add_element(my_title=title("Element 2"), price=number(0))
+                # Fix the element ID to be the same as the previous one
+                response.query["results"][0]["id"] = "6c67da52-3a1b-4673-9d59-3e6cb94c142b"
+                return response.get()
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 
