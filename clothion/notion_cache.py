@@ -41,7 +41,9 @@ def extract_data_from_db(db: Session, token: str, table_id: str) -> List[Dict]:
     return data
 
 
-def get_data(db: Session, token: str, table_id: str, update_cache: bool = True) -> List[Dict]:
+def get_data(
+    db: Session, token: str, table_id: str, reset_cache: bool = False, update_cache: bool = True
+) -> List[Dict]:
     """Retrieve the data for this table.
 
     The data is cached on the DB for fast retrieval and custom queries and
@@ -54,6 +56,8 @@ def get_data(db: Session, token: str, table_id: str, update_cache: bool = True) 
         db (Session): DB Session to use for calling the DB.
         token (str): Integration token that has access to the Notion table.
         table_id (str): ID of the Notion table to get the data from.
+        reset_cache (bool): If set to `True`, delete the local cache of the
+            table, and retrieve everything from Notion API.
         update_cache (bool): If set to `False`, this method will not
             try to update the cache using the Notion API. Faster, but
             potentially not up-to-date. Defaults to `True`.
@@ -61,9 +65,14 @@ def get_data(db: Session, token: str, table_id: str, update_cache: bool = True) 
     Returns:
         List[Dict]: Data from the Notion table.
     """
+    if reset_cache:
+        db_table = crud.get_table_from_token_and_table_id(db, token, table_id)
+        crud.delete_elements_of_table(db, db_table.id)
+        update_cache = True
+
     if update_cache:
         # Get the latest element to know from which date to retrieve stuff
-        db_latest_element = crud.last_table_element(db, token, table_id)
+        db_latest_element = crud.last_table_element(db, token, table_id) if not reset_cache else None
 
         filter_kwargs = {}
         if db_latest_element is not None:

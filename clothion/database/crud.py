@@ -7,6 +7,13 @@ from sqlalchemy.orm import Session
 from clothion.database import engine, models
 
 
+KEY_NAME = {
+    "people": "id",
+    "files": "name",
+    "multi_select": "name",
+}
+
+
 def create_tables():
     models.Base.metadata.create_all(bind=engine)
 
@@ -71,6 +78,16 @@ def get_table_by_table_id(db: Session, integration_id: int, table_id: str):
     )
 
 
+def get_table_from_token_and_table_id(db: Session, token: str, table_id: str):
+    return (
+        db.query(models.Table)
+        .join(models.Integration)
+        .filter(models.Integration.token == token)
+        .filter(models.Table.table_id == table_id)
+        .first()
+    )
+
+
 def get_table(db: Session, integration_id: int, id: int):
     return (
         db.query(models.Table)
@@ -113,11 +130,15 @@ def last_table_element(db: Session, token: str, table_id: str):
     )
 
 
+def delete_elements_of_table(db: Session, table_id: id):
+    db.query(models.Element).filter(models.Element.table_id == table_id).delete()
+
+
 def get_element_by_notion_id(db: Session, notion_id: str):
     return db.query(models.Element).filter(models.Element.notion_id == notion_id).first()
 
 
-def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, type: str = None) -> models.Base:  # noqa: C901
+def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: str = None) -> models.Base:  # noqa: C901
     """Helper function converting an attribute coming from the Notion API into
     a DB row corresponding to the right type.
 
@@ -126,16 +147,16 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, type: str = N
         attr (Dict): Content of the attribute (from Notion API).
         element_id (int): ID of the element this attribute belongs to (for
             linking).
-        type (str): Type of this attribute. If `None`, uses the type as
+        attr_type (str): Type of this attribute. If `None`, uses the type as
             described in the attribute's content. Defaults to `None`.
 
     Returns:
         models.Base: The DB row to add.
     """
-    if type is None:
-        type = attr["type"]
+    if attr_type is None:
+        attr_type = attr["type"]
 
-    kwargs = {"name": name, "type": type, "element_id": element_id}
+    kwargs = {"name": name, "type": attr_type, "element_id": element_id}
 
     if attr["type"] == "title":
         db_attr = models.StringAttribute(value="".join(t["plain_text"] for t in attr["title"]), **kwargs)
@@ -143,6 +164,8 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, type: str = N
         db_attr = models.BooleanAttribute(value=attr["checkbox"], **kwargs)
     elif attr["type"] == "rich_text":
         db_attr = models.StringAttribute(value="".join(t["plain_text"] for t in attr["rich_text"]), **kwargs)
+    elif attr["type"] == "string":
+        db_attr = models.StringAttribute(value=attr["string"], **kwargs)
     elif attr["type"] == "number":
         db_attr = models.NumberAttribute(value=attr["number"], **kwargs)
     elif attr["type"] == "select":
@@ -155,7 +178,8 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, type: str = N
     elif attr["type"] == "date":
         db_attr = models.DateAttribute(value=isoparse(attr["date"]["start"]), **kwargs)
     elif attr["type"] == "people":
-        db_attr = models.StringAttribute(value=attr["people"]["id"], **kwargs)
+        # Special case, the values will be contained in another table !
+        db_attr = models.MultiAttribute(**kwargs)
     elif attr["type"] == "files":
         # Special case, the values will be contained in another table !
         db_attr = models.MultiAttribute(**kwargs)
@@ -184,16 +208,21 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, type: str = N
 
 def create_attribute(db: Session, name: str, attr: Dict, element_id: int):
     db_attr = notion_attr_to_db_attr(name, attr, element_id)
+
+    if db_attr is None:
+        return
+
     db.add(db_attr)
     db.commit()
 
     # Special case, for attributes with multiple values, we need to add the
     # values in a different table as well !
-    if attr["type"] == "files" or attr["type"] == "multi_select":
+    t = attr["type"]
+    if t == "files" or t == "multi_select" or t == "people":
         db.refresh(db_attr)
 
-        for value in attr[attr["type"]]:
-            db_attr_part = models.MultiPartString(text=value["name"], multiattribute_id=db_attr.id)
+        for value in attr[t]:
+            db_attr_part = models.MultiPartString(text=value[KEY_NAME[t]], multiattribute_id=db_attr.id)
             db.add(db_attr_part)
 
         db.commit()
