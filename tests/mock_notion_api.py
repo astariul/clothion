@@ -72,7 +72,7 @@ class FakeResponse:
 
 
 class MockDBQuery:
-    def query(self, database_id: str, **kwargs):
+    def query(self, database_id: str, **kwargs):  # noqa: C901
         if database_id == "table_with_basic_data":
             response = FakeResponse()
             response.add_element(my_title=title("Element 1"), price=number(56))
@@ -112,6 +112,13 @@ class MockDBQuery:
                 # Fix the element ID to be the same as the previous one
                 response.query["results"][0]["id"] = "6c67da52-3a1b-4673-9d59-3e6cb94c142b"
                 return response.get()
+        elif database_id == "table_2nd_call_crash":
+            if "filter" not in kwargs:
+                # First call
+                return self.query("table_with_basic_data")
+            else:
+                # Second call
+                raise RuntimeError
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 

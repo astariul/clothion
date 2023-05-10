@@ -207,3 +207,25 @@ def test_access_data_updated_element_on_second_call(client):
     assert len(data) == 2
     assert {"my_title": "Element 1", "price": 56} in data
     assert {"my_title": "Element 2", "price": 0} in data
+
+
+def test_access_data_reset_cache(client):
+    integration_id, table_id = create_table(client, "token#10", "table_2nd_call_crash")
+
+    # First call get the basic data
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 98} in data
+
+    # If the Mock Notion API is called a second time (with filter), it crashes
+    # and fails the test. But we set `reset_cache` to `True`, forcing to
+    # re-query the whole table
+    response = client.get(f"/{integration_id}/{table_id}/data?reset_cache=true")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 98} in data
