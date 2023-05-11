@@ -1,6 +1,6 @@
 import uuid
 from collections import Counter
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 import httpx
 import notion_client
@@ -37,6 +37,200 @@ def number(x: Union[int, float]) -> Dict:
         "id": "fF%3Ce",
         "type": "number",
         "number": x,
+    }
+
+
+def checkbox(x: bool) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "checkbox",
+        "checkbox": x,
+    }
+
+
+def url(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "url",
+        "url": x,
+    }
+
+
+def email(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "email",
+        "email": x,
+    }
+
+
+def phone(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "phone_number",
+        "phone_number": x,
+    }
+
+
+def formula(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "formula",
+        "formula": {
+            "type": "string",
+            "string": x,
+        },
+    }
+
+
+def relation() -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "has_more": False,
+        "type": "relation",
+        "relation": [{"id": "6f1f0aca-9999-4086-94fe-9dfe1d50ce43"}],
+    }
+
+
+def rollup() -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "rollup",
+        "rollup": {
+            "array": [],
+            "function": "show_original",
+            "type": "array",
+        },
+    }
+
+
+def created_at(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "created_time",
+        "created_time": x,
+    }
+
+
+def edited_at(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "last_edited_time",
+        "last_edited_time": x,
+    }
+
+
+def created_by(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "created_by",
+        "created_by": {
+            "object": "user",
+            "id": x,
+        },
+    }
+
+
+def edited_by(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "last_edited_by",
+        "last_edited_by": {
+            "object": "user",
+            "id": x,
+        },
+    }
+
+
+def rich_text(text: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "rich_text",
+        "rich_text": [
+            {
+                "type": "text",
+                "text": {
+                    "content": text,
+                    "link": "None",
+                },
+                "annotations": {
+                    "bold": False,
+                    "italic": False,
+                    "strikethrough": False,
+                    "underline": False,
+                    "code": False,
+                    "color": "default",
+                },
+                "plain_text": text,
+                "href": "None",
+            }
+        ],
+    }
+
+
+def select(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "select",
+        "select": {"color": "green", "id": "d4fb0c3c-9999-453a-a5fc-6e560f101d63", "name": x},
+    }
+
+
+def multi_select(x: List[str]) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "multi_select",
+        "multi_select": [{"color": "green", "id": "d4fb0c3c-9999-453a-a5fc-6e560f101d63", "name": t} for t in x],
+    }
+
+
+def status(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "status",
+        "status": {"color": "default", "id": "d4fb0c3c-9999-453a-a5fc-6e560f101d63", "name": x},
+    }
+
+
+def date(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "date",
+        "date": {
+            "start": x,
+            "end": None,
+            "time_zone": None,
+        },
+    }
+
+
+def people(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "people",
+        "people": [
+            {
+                "id": x,
+                "object": "user",
+            }
+        ],
+    }
+
+
+def files(x: str) -> Dict:
+    return {
+        "id": "fF%3Ce",
+        "type": "files",
+        "files": [
+            {
+                "name": x,
+                "type": "file",
+                "file": {
+                    "expiry_time": "2023-05-07T15:10:11.829Z",
+                    "url": "example.com",
+                },
+            }
+        ],
     }
 
 
@@ -146,6 +340,31 @@ class MockDBQuery:
                 raise RuntimeError
         elif database_id == "table_call_crash":
             raise RuntimeError
+        elif database_id == "table_full_data":
+            response = FakeResponse()
+            response.add_element(
+                title=title("My title"),
+                checkbox=checkbox(True),
+                number=number(2.5),
+                url=url("example.com"),
+                email=email("me@example.com"),
+                phone=phone("010-3715-6565"),
+                formula=formula("256"),
+                relation=relation(),
+                rollup=rollup(),
+                created_at=created_at("2023-05-07T14:02:00.000Z"),
+                created_by=created_by("111"),
+                edited_at=edited_at("2023-05-07T14:08:00.000Z"),
+                edited_by=created_by("111"),
+                rich_text=rich_text("Such a bore"),
+                select=select("Option 1"),
+                multi_select=multi_select(["Opt1", "Opt2"]),
+                status=status("Not done"),
+                date=date("2023-05-08T10:00:00.000+09:00"),
+                people=people("111"),
+                files=files("img.png"),
+            )
+            return response.get()
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 

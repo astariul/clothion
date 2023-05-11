@@ -262,3 +262,33 @@ def test_access_data_only_cache_on_no_data(client):
     response = client.get(f"/{integration_id}/{table_id}/data?update_cache=false")
     assert response.status_code == 200
     assert len(response.json()) == 0
+
+
+def test_access_data_full_data_range(client):
+    integration_id, table_id = create_table(client, "token#13", "table_full_data")
+
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["title"] == "My title"
+    assert data[0]["checkbox"] is True
+    assert data[0]["number"] == 2.5
+    assert data[0]["url"] == "example.com"
+    assert data[0]["email"] == "me@example.com"
+    assert data[0]["phone"] == "010-3715-6565"
+    assert data[0]["formula"] == "256"
+    assert "relation" not in data[0]
+    assert "rollup" not in data[0]
+    assert data[0]["created_at"] == "2023-05-07T14:02:00"
+    assert data[0]["created_by"] == "111"
+    assert data[0]["edited_at"] == "2023-05-07T14:08:00"
+    assert data[0]["edited_by"] == "111"
+    assert data[0]["rich_text"] == "Such a bore"
+    assert data[0]["select"] == "Option 1"
+    assert data[0]["multi_select"] == ["Opt1", "Opt2"]
+    assert data[0]["status"] == "Not done"
+    assert data[0]["date"] == "2023-05-08T10:00:00"
+    assert data[0]["people"] == ["111"]
+    assert data[0]["files"] == ["img.png"]
