@@ -131,7 +131,12 @@ def data(
 
     try:
         return notion_cache.get_data(
-            db, db_integration.token, db_table.table_id, reset_cache=reset_cache, update_cache=update_cache
+            db,
+            db_integration.token,
+            db_table.table_id,
+            db_table.id,
+            reset_cache=reset_cache,
+            update_cache=update_cache,
         )
     except APIResponseError:
         raise HTTPException(status_code=404)

@@ -78,31 +78,11 @@ def get_table_by_table_id(db: Session, integration_id: int, table_id: str):
     )
 
 
-def get_table_from_token_and_table_id(db: Session, token: str, table_id: str):
-    return (
-        db.query(models.Table)
-        .join(models.Integration)
-        .filter(models.Integration.token == token)
-        .filter(models.Table.table_id == table_id)
-        .first()
-    )
-
-
 def get_table(db: Session, integration_id: int, id: int):
     return (
         db.query(models.Table)
         .filter(models.Table.integration_id == integration_id)
         .filter(models.Table.id == id)
-        .first()
-    )
-
-
-def get_table_by_token_and_table_id(db: Session, token: str, table_id: str):
-    return (
-        db.query(models.Table)
-        .join(models.Integration)
-        .filter(models.Integration.token == token)
-        .filter(models.Table.table_id == table_id)
         .first()
     )
 
@@ -118,13 +98,10 @@ def create_table(db: Session, integration_id: int, table_id: str):
     return db_table
 
 
-def last_table_element(db: Session, token: str, table_id: str):
+def last_table_element(db: Session, table_id: int):
     return (
         db.query(models.Element)
-        .join(models.Table)
-        .join(models.Integration)
-        .filter(models.Integration.token == token)
-        .filter(models.Table.table_id == table_id)
+        .filter(models.Element.table_id == table_id)
         .order_by(models.Element.last_edited.desc())
         .first()
     )
@@ -228,7 +205,7 @@ def create_attribute(db: Session, name: str, attr: Dict, element_id: int):
         db.commit()
 
 
-def create_element(db: Session, notion_id: str, table_id: str, last_edited: str, attributes: Dict):
+def create_element(db: Session, notion_id: str, table_id: int, last_edited: str, attributes: Dict):
     # First, create the element
     db_element = models.Element(table_id=table_id, notion_id=notion_id, last_edited=isoparse(last_edited))
     db.add(db_element)
@@ -263,12 +240,5 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
     return db_element
 
 
-def get_elements_of_table(db: Session, token: str, table_id: str):
-    return (
-        db.query(models.Element)
-        .join(models.Table)
-        .join(models.Integration)
-        .filter(models.Integration.token == token)
-        .filter(models.Table.table_id == table_id)
-        .all()
-    )
+def get_elements_of_table(db: Session, table_id: int):
+    return db.query(models.Element).filter(models.Element.table_id == table_id).all()

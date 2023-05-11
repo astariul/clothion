@@ -7,19 +7,18 @@ from sqlalchemy.orm import Session
 from clothion.database import crud
 
 
-def extract_data_from_db(db: Session, token: str, table_id: str) -> List[Dict]:
+def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
     """Helper function that takes care of extracting the DB data and convert it
     into JSON data.
 
     Args:
         db (Session): DB Session to use for calling the DB.
-        token (str): Integration token that has access to the Notion table.
-        table_id (str): ID of the Notion table to get the data from.
+        db_table_id (int): ID of the Table from which to extract the data.
 
     Returns:
         List[Dict]: JSON data corresponding to this table.
     """
-    db_elements = crud.get_elements_of_table(db, token, table_id)
+    db_elements = crud.get_elements_of_table(db, db_table_id)
 
     data = []
     for element in db_elements:
@@ -42,7 +41,7 @@ def extract_data_from_db(db: Session, token: str, table_id: str) -> List[Dict]:
 
 
 def get_data(
-    db: Session, token: str, table_id: str, reset_cache: bool = False, update_cache: bool = True
+    db: Session, token: str, table_id: str, db_table_id: int, reset_cache: bool = False, update_cache: bool = True
 ) -> List[Dict]:
     """Retrieve the data for this table.
 
@@ -56,6 +55,7 @@ def get_data(
         db (Session): DB Session to use for calling the DB.
         token (str): Integration token that has access to the Notion table.
         table_id (str): ID of the Notion table to get the data from.
+        db_table_id (int): ID of the Table in our DB.
         reset_cache (bool): If set to `True`, delete the local cache of the
             table, and retrieve everything from Notion API.
         update_cache (bool): If set to `False`, this method will not
@@ -66,13 +66,12 @@ def get_data(
         List[Dict]: Data from the Notion table.
     """
     if reset_cache:
-        db_table = crud.get_table_from_token_and_table_id(db, token, table_id)
-        crud.delete_elements_of_table(db, db_table.id)
+        crud.delete_elements_of_table(db, db_table_id)
         update_cache = True
 
     if update_cache:
         # Get the latest element to know from which date to retrieve stuff
-        db_latest_element = crud.last_table_element(db, token, table_id) if not reset_cache else None
+        db_latest_element = crud.last_table_element(db, db_table_id) if not reset_cache else None
 
         filter_kwargs = {}
         if db_latest_element is not None:
@@ -96,12 +95,11 @@ def get_data(
 
             if db_element is None:
                 # Create it in our DB
-                db_table = crud.get_table_by_token_and_table_id(db, token, table_id)
                 db_element = crud.create_element(
-                    db, element["id"], db_table.id, element["last_edited_time"], element["properties"]
+                    db, element["id"], db_table_id, element["last_edited_time"], element["properties"]
                 )
             else:
                 # Update it in our DB
                 db_element = crud.update_element(db, db_element, element["last_edited_time"], element["properties"])
 
-    return extract_data_from_db(db, token, table_id)
+    return extract_data_from_db(db, db_table_id)
