@@ -4,7 +4,7 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode
 from typing import Annotated
 
 import uvicorn
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from notion_client import APIResponseError
@@ -74,21 +74,38 @@ def create(integration: Annotated[str, Form()], table: Annotated[str, Form()], d
     integration_b64 = urlsafe_b64encode(db_integration.id.to_bytes(N_BYTES, ENDIAN)).decode()[:-2]
     table_b64 = urlsafe_b64encode(db_table.id.to_bytes(N_BYTES, ENDIAN)).decode()[:-2]
 
-    return RedirectResponse(f"/{integration_b64}/{table_b64}", status_code=301)
+    return RedirectResponse(f"/{integration_b64}/{table_b64}/", status_code=301)
 
 
-@app.get("/{integration_b64}/{table_b64}", tags=["HTML"], response_class=HTMLResponse)
-def widget(request: Request, integration_b64: str, table_b64: str, db: Session = Depends(get_db)):
-    # Decode the base64 to get the IDs of the integration and table
-    try:
-        integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
-        table_id = int.from_bytes(urlsafe_b64decode((table_b64 + "==").encode()), ENDIAN)
-    except binascii.Error:
-        raise PageNotFound()
+class ReqTable:
+    def __init__(self, integration_b64: str, table_b64: str, db: Session = Depends(get_db)):
+        self.db = db
 
+        # Decode the base64 to get the IDs of the integration and table
+        try:
+            self.integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
+            self.table_id = int.from_bytes(urlsafe_b64decode((table_b64 + "==").encode()), ENDIAN)
+        except binascii.Error:
+            raise PageNotFound()
+
+    def get_integration_db(self):
+        return crud.get_integration(db=self.db, id=self.integration_id)
+
+    def get_table_db(self):
+        return crud.get_table(db=self.db, integration_id=self.integration_id, id=self.table_id)
+
+
+table_router = APIRouter(
+    prefix="/{integration_b64}/{table_b64}",
+    dependencies=[Depends(ReqTable)],
+)
+
+
+@table_router.get("/", tags=["HTML"], response_class=HTMLResponse)
+def widget(request: Request, req: ReqTable = Depends()):
     # Retrieve the contents of this integration and table from the DB
-    db_integration = crud.get_integration(db=db, id=integration_id)
-    db_table = crud.get_table(db=db, integration_id=integration_id, id=table_id)
+    db_integration = req.get_integration_db()
+    db_table = req.get_table_db()
 
     if db_integration is None or db_table is None:
         raise PageNotFound()
@@ -98,24 +115,16 @@ def widget(request: Request, integration_b64: str, table_b64: str, db: Session =
     )
 
 
-@app.get("/{integration_b64}/{table_b64}/data", tags=["API"])
+@table_router.get("/data", tags=["API"])
 def data(
-    integration_b64: str,
-    table_b64: str,
     reset_cache: bool = False,
     update_cache: bool = True,
+    req: ReqTable = Depends(),
     db: Session = Depends(get_db),
 ):
-    # Decode the base64 to get the IDs of the integration and table
-    try:
-        integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
-        table_id = int.from_bytes(urlsafe_b64decode((table_b64 + "==").encode()), ENDIAN)
-    except binascii.Error:
-        raise HTTPException(status_code=404)
-
     # Retrieve the contents of this integration and table from the DB
-    db_integration = crud.get_integration(db=db, id=integration_id)
-    db_table = crud.get_table(db=db, integration_id=integration_id, id=table_id)
+    db_integration = req.get_integration_db()
+    db_table = req.get_table_db()
 
     if db_integration is None or db_table is None:
         raise HTTPException(status_code=404)
@@ -126,6 +135,9 @@ def data(
         )
     except APIResponseError:
         raise HTTPException(status_code=404)
+
+
+app.include_router(table_router)
 
 
 def serve():
