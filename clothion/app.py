@@ -99,7 +99,13 @@ def widget(request: Request, integration_b64: str, table_b64: str, db: Session =
 
 
 @app.get("/{integration_b64}/{table_b64}/data", tags=["API"])
-def data(integration_b64: str, table_b64: str, reset_cache: bool = False, db: Session = Depends(get_db)):
+def data(
+    integration_b64: str,
+    table_b64: str,
+    reset_cache: bool = False,
+    update_cache: bool = True,
+    db: Session = Depends(get_db),
+):
     # Decode the base64 to get the IDs of the integration and table
     try:
         integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
@@ -115,7 +121,9 @@ def data(integration_b64: str, table_b64: str, reset_cache: bool = False, db: Se
         raise HTTPException(status_code=404)
 
     try:
-        return notion_cache.get_data(db, db_integration.token, db_table.table_id, reset_cache=reset_cache)
+        return notion_cache.get_data(
+            db, db_integration.token, db_table.table_id, reset_cache=reset_cache, update_cache=update_cache
+        )
     except APIResponseError:
         raise HTTPException(status_code=404)
 

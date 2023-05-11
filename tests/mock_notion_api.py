@@ -1,4 +1,5 @@
 import uuid
+from collections import Counter
 from typing import Dict, Union
 
 import httpx
@@ -71,8 +72,13 @@ class FakeResponse:
         return self.query
 
 
+# Global call counter, to know how many time each table is called through the Mock Notion API
+N_CALLS = Counter()
+
+
 class MockDBQuery:
     def query(self, database_id: str, **kwargs):  # noqa: C901
+        N_CALLS[database_id] += 1
         if database_id == "table_with_basic_data":
             response = FakeResponse()
             response.add_element(my_title=title("Element 1"), price=number(56))
@@ -80,14 +86,14 @@ class MockDBQuery:
             return response.get()
         elif database_id == "table_api_error":
             raise notion_client.APIResponseError(httpx.Response(401), "", "")
-        elif database_id == "table_2nd_call_no_data":
+        elif database_id == "table_filter_call_no_data":
             if "filter" not in kwargs:
                 # First call
                 return self.query("table_with_basic_data")
             else:
                 # Second call
                 return FakeResponse().get()
-        elif database_id == "table_2nd_call_new_data":
+        elif database_id == "table_filter_call_new_data":
             if "filter" not in kwargs:
                 # First call
                 return self.query("table_with_basic_data")
@@ -96,9 +102,8 @@ class MockDBQuery:
                 response = FakeResponse()
                 response.add_element(my_title=title("Element 3"), price=number(-22))
                 return response.get()
-        elif database_id == "table_2nd_call_updated_data":
+        elif database_id == "table_filter_call_updated_data":
             if "filter" not in kwargs:
-                # First call
                 response = FakeResponse()
                 response.add_element(my_title=title("Element 1"), price=number(56))
                 response.add_element(my_title=title("Element 2"), price=number(98))
@@ -106,19 +111,41 @@ class MockDBQuery:
                 response.query["results"][1]["id"] = "6c67da52-3a1b-4673-9d59-3e6cb94c142b"
                 return response.get()
             else:
-                # Second call
                 response = FakeResponse()
                 response.add_element(my_title=title("Element 2"), price=number(0))
                 # Fix the element ID to be the same as the previous one
                 response.query["results"][0]["id"] = "6c67da52-3a1b-4673-9d59-3e6cb94c142b"
                 return response.get()
-        elif database_id == "table_2nd_call_crash":
+        elif database_id == "table_filter_call_crash_normal_call_updates":
             if "filter" not in kwargs:
-                # First call
-                return self.query("table_with_basic_data")
+                response = FakeResponse()
+                # Depending on how many time we called this function, return different results
+                if N_CALLS[database_id] == 1:
+                    self.table_filter_call_crash_normal_call_updates_called = True
+                    response.add_element(my_title=title("Element 1"), price=number(56))
+                    response.add_element(my_title=title("Element 2"), price=number(98))
+                else:
+                    response.add_element(my_title=title("Element 1"), price=number(25))
+                    response.add_element(my_title=title("Element 2"), price=number(51))
+                return response.get()
             else:
-                # Second call
                 raise RuntimeError
+        elif database_id == "table_filter_call_crash_normal_call_updates_2":
+            # Same as table_filter_call_crash_normal_call_updates
+            if "filter" not in kwargs:
+                response = FakeResponse()
+                if N_CALLS[database_id] == 1:
+                    self.table_filter_call_crash_normal_call_updates_2_called = True
+                    response.add_element(my_title=title("Element 1"), price=number(56))
+                    response.add_element(my_title=title("Element 2"), price=number(98))
+                else:
+                    response.add_element(my_title=title("Element 1"), price=number(25))
+                    response.add_element(my_title=title("Element 2"), price=number(51))
+                return response.get()
+            else:
+                raise RuntimeError
+        elif database_id == "table_call_crash":
+            raise RuntimeError
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 

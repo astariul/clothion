@@ -147,7 +147,7 @@ def test_access_data_handle_api_error(client):
 
 
 def test_access_data_cached_after_first_call(client):
-    integration_id, table_id = create_table(client, "token#7", "table_2nd_call_no_data")
+    integration_id, table_id = create_table(client, "token#7", "table_filter_call_no_data")
 
     # First call populate the cache
     response = client.get(f"/{integration_id}/{table_id}/data")
@@ -167,7 +167,7 @@ def test_access_data_cached_after_first_call(client):
 
 
 def test_access_data_new_element_on_second_call(client):
-    integration_id, table_id = create_table(client, "token#8", "table_2nd_call_new_data")
+    integration_id, table_id = create_table(client, "token#8", "table_filter_call_new_data")
 
     # First call get the basic data
     response = client.get(f"/{integration_id}/{table_id}/data")
@@ -189,7 +189,7 @@ def test_access_data_new_element_on_second_call(client):
 
 
 def test_access_data_updated_element_on_second_call(client):
-    integration_id, table_id = create_table(client, "token#9", "table_2nd_call_updated_data")
+    integration_id, table_id = create_table(client, "token#9", "table_filter_call_updated_data")
 
     # First call get the basic data
     response = client.get(f"/{integration_id}/{table_id}/data")
@@ -210,7 +210,7 @@ def test_access_data_updated_element_on_second_call(client):
 
 
 def test_access_data_reset_cache(client):
-    integration_id, table_id = create_table(client, "token#10", "table_2nd_call_crash")
+    integration_id, table_id = create_table(client, "token#10", "table_filter_call_crash_normal_call_updates")
 
     # First call get the basic data
     response = client.get(f"/{integration_id}/{table_id}/data")
@@ -222,10 +222,43 @@ def test_access_data_reset_cache(client):
 
     # If the Mock Notion API is called a second time (with filter), it crashes
     # and fails the test. But we set `reset_cache` to `True`, forcing to
-    # re-query the whole table
+    # re-query the whole table (and observe the change in price as well)
     response = client.get(f"/{integration_id}/{table_id}/data?reset_cache=true")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 25} in data
+    assert {"my_title": "Element 2", "price": 51} in data
+
+
+def test_access_data_only_cache_on_existing_data(client):
+    integration_id, table_id = create_table(client, "token#11", "table_filter_call_crash_normal_call_updates_2")
+
+    # First call get the basic data
+    response = client.get(f"/{integration_id}/{table_id}/data")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
     assert {"my_title": "Element 1", "price": 56} in data
     assert {"my_title": "Element 2", "price": 98} in data
+
+    # If the Mock Notion API is called a second time (with filter), it crashes
+    # and fails the test. But we set `update_cache` to `False`, which makes no
+    # call to the Notion API and use the local cache instead (so the price
+    # doesn't change)
+    response = client.get(f"/{integration_id}/{table_id}/data?update_cache=false")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert {"my_title": "Element 1", "price": 56} in data
+    assert {"my_title": "Element 2", "price": 98} in data
+
+
+def test_access_data_only_cache_on_no_data(client):
+    integration_id, table_id = create_table(client, "token#12", "table_call_crash")
+
+    # If the Mock Notion API is called, it crashes and fails the test.
+    # But we set `update_cache` to `False`, so the Notion API is not called at all
+    response = client.get(f"/{integration_id}/{table_id}/data?update_cache=false")
+    assert response.status_code == 200
+    assert len(response.json()) == 0
