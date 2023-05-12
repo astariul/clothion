@@ -104,3 +104,20 @@ def get_data(
                 db_element = crud.update_element(db, db_element, element["last_edited_time"], element["properties"])
 
     return extract_data_from_db(db, db_table_id)
+
+
+def get_schema(token: str, table_id: str) -> Dict:
+    """Retrieve the schema of this table.
+    This method always call the Notion API.
+
+    Args:
+        token (str): Integration token that has access to the Notion table.
+        table_id (str): ID of the Notion table to get the data from.
+
+    Returns:
+        Dict: Dictionary where the keys are the name of each attribute, and the
+            values are the type of the attribute.
+    """
+    notion = Client(auth=token)
+    notion_db = notion.databases.retrieve(database_id=table_id)
+    return {name: prop["type"] for name, prop in notion_db["properties"].items()}

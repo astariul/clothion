@@ -141,6 +141,21 @@ def data(
         raise HTTPException(status_code=404)
 
 
+@table_router.get("/schema", tags=["API"])
+def schema(req: ReqTable = Depends()):
+    # Retrieve the contents of this integration and table from the DB
+    db_integration = req.get_integration_db()
+    db_table = req.get_table_db()
+
+    if db_integration is None or db_table is None:
+        raise HTTPException(status_code=404)
+
+    try:
+        return notion_cache.get_schema(db_integration.token, db_table.table_id)
+    except notion_cache.APIResponseError:
+        raise HTTPException(status_code=404)
+
+
 app.include_router(table_router)
 
 
