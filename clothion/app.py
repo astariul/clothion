@@ -87,9 +87,6 @@ class ReqTable:
         except binascii.Error:
             raise PageNotFound()
 
-    def get_integration_db(self):
-        return crud.get_integration(db=self.db, id=self.integration_id)
-
     def get_table_db(self):
         return crud.get_table(db=self.db, integration_id=self.integration_id, id=self.table_id)
 
@@ -102,15 +99,15 @@ table_router = APIRouter(
 
 @table_router.get("/", tags=["HTML"], response_class=HTMLResponse)
 def widget(request: Request, req: ReqTable = Depends()):
-    # Retrieve the contents of this integration and table from the DB
-    db_integration = req.get_integration_db()
+    # Retrieve the contents of this table from the DB
     db_table = req.get_table_db()
 
-    if db_integration is None or db_table is None:
+    if db_table is None:
         raise PageNotFound()
 
     return templates.TemplateResponse(
-        "widget.html", {"request": request, "integration_id": db_integration.token, "table_id": db_table.table_id}
+        "widget.html",
+        {"request": request, "integration_id": db_table.integration.token, "table_id": db_table.table_id},
     )
 
 
@@ -121,17 +118,16 @@ def data(
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
 ):
-    # Retrieve the contents of this integration and table from the DB
-    db_integration = req.get_integration_db()
+    # Retrieve the contents of this table from the DB
     db_table = req.get_table_db()
 
-    if db_integration is None or db_table is None:
+    if db_table is None:
         raise HTTPException(status_code=404)
 
     try:
         return notion_cache.get_data(
             db,
-            db_integration.token,
+            db_table.integration.token,
             db_table.table_id,
             db_table.id,
             reset_cache=reset_cache,
@@ -143,15 +139,14 @@ def data(
 
 @table_router.get("/schema", tags=["API"])
 def schema(req: ReqTable = Depends()):
-    # Retrieve the contents of this integration and table from the DB
-    db_integration = req.get_integration_db()
+    # Retrieve the contents of this table from the DB
     db_table = req.get_table_db()
 
-    if db_integration is None or db_table is None:
+    if db_table is None:
         raise HTTPException(status_code=404)
 
     try:
-        return notion_cache.get_schema(db_integration.token, db_table.table_id)
+        return notion_cache.get_schema(db_table.integration.token, db_table.table_id)
     except notion_cache.APIResponseError:
         raise HTTPException(status_code=404)
 
