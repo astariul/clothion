@@ -5,7 +5,7 @@ from notion_client import Client
 from notion_client.helpers import iterate_paginated_api
 from sqlalchemy.orm import Session
 
-from clothion.database import crud
+from clothion.database import crud, models
 
 
 def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
@@ -41,9 +41,7 @@ def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
     return data
 
 
-def get_data(
-    db: Session, token: str, table_id: str, db_table_id: int, reset_cache: bool = False, update_cache: bool = True
-) -> List[Dict]:
+def get_data(db: Session, table: models.Table, reset_cache: bool = False, update_cache: bool = True) -> List[Dict]:
     """Retrieve the data for this table.
 
     The data is cached on the DB for fast retrieval and custom queries and
@@ -54,9 +52,7 @@ def get_data(
 
     Args:
         db (Session): DB Session to use for calling the DB.
-        token (str): Integration token that has access to the Notion table.
-        table_id (str): ID of the Notion table to get the data from.
-        db_table_id (int): ID of the Table in our DB.
+        table (models.Table): Table for which we should retrieve the data.
         reset_cache (bool): If set to `True`, delete the local cache of the
             table, and retrieve everything from Notion API.
         update_cache (bool): If set to `False`, this method will not
@@ -67,12 +63,12 @@ def get_data(
         List[Dict]: Data from the Notion table.
     """
     if reset_cache:
-        crud.delete_elements_of_table(db, db_table_id)
+        crud.delete_elements_of_table(db, table.id)
         update_cache = True
 
     if update_cache:
         # Get the latest element to know from which date to retrieve stuff
-        db_latest_element = crud.last_table_element(db, db_table_id) if not reset_cache else None
+        db_latest_element = crud.last_table_element(db, table.id) if not reset_cache else None
 
         filter_kwargs = {}
         if db_latest_element is not None:
@@ -84,9 +80,9 @@ def get_data(
             }
 
         # Call the Notion API to retrieve any elements newer than that date
-        notion = Client(auth=token)
+        notion = Client(auth=table.integration.token)
         all_elements = []
-        for elements in iterate_paginated_api(notion.databases.query, database_id=table_id, **filter_kwargs):
+        for elements in iterate_paginated_api(notion.databases.query, database_id=table.table_id, **filter_kwargs):
             all_elements.extend(elements)
 
         # Add or update all the newly edited properties in our DB
@@ -97,27 +93,26 @@ def get_data(
             if db_element is None:
                 # Create it in our DB
                 db_element = crud.create_element(
-                    db, element["id"], db_table_id, element["last_edited_time"], element["properties"]
+                    db, element["id"], table.id, element["last_edited_time"], element["properties"]
                 )
             else:
                 # Update it in our DB
                 db_element = crud.update_element(db, db_element, element["last_edited_time"], element["properties"])
 
-    return extract_data_from_db(db, db_table_id)
+    return extract_data_from_db(db, table.id)
 
 
-def get_schema(token: str, table_id: str) -> Dict:
+def get_schema(table: models.Table) -> Dict:
     """Retrieve the schema of this table.
     This method always call the Notion API.
 
     Args:
-        token (str): Integration token that has access to the Notion table.
-        table_id (str): ID of the Notion table to get the data from.
+        table (models.Table): Table for which we should retrieve the schema.
 
     Returns:
         Dict: Dictionary where the keys are the name of each attribute, and the
             values are the type of the attribute.
     """
-    notion = Client(auth=token)
-    notion_db = notion.databases.retrieve(database_id=table_id)
+    notion = Client(auth=table.integration.token)
+    notion_db = notion.databases.retrieve(database_id=table.table_id)
     return {name: prop["type"] for name, prop in notion_db["properties"].items()}

@@ -127,9 +127,7 @@ def data(
     try:
         return notion_cache.get_data(
             db,
-            db_table.integration.token,
-            db_table.table_id,
-            db_table.id,
+            db_table,
             reset_cache=reset_cache,
             update_cache=update_cache,
         )
@@ -146,7 +144,7 @@ def schema(req: ReqTable = Depends()):
         raise HTTPException(status_code=404)
 
     try:
-        return notion_cache.get_schema(db_table.integration.token, db_table.table_id)
+        return notion_cache.get_schema(db_table)
     except notion_cache.APIResponseError:
         raise HTTPException(status_code=404)
 
