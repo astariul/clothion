@@ -136,7 +136,7 @@ def data(
 
 
 @table_router.get("/schema", tags=["API"])
-def schema(req: ReqTable = Depends()):
+def schema(req: ReqTable = Depends(), db: Session = Depends(get_db)):
     # Retrieve the contents of this table from the DB
     db_table = req.get_table_db()
 
@@ -144,7 +144,7 @@ def schema(req: ReqTable = Depends()):
         raise HTTPException(status_code=404)
 
     try:
-        return notion_cache.get_schema(db_table)
+        return notion_cache.get_schema(db, db_table)
     except notion_cache.APIResponseError:
         raise HTTPException(status_code=404)
 

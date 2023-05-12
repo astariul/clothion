@@ -102,17 +102,37 @@ def get_data(db: Session, table: models.Table, reset_cache: bool = False, update
     return extract_data_from_db(db, table.id)
 
 
-def get_schema(table: models.Table) -> Dict:
+def get_schema(db: Session, table: models.Table) -> Dict:
     """Retrieve the schema of this table.
-    This method always call the Notion API.
+
+    This method check our DB to see if we can extract the schema from cached
+    element. Only if nothing is in there we call the Notion API.
 
     Args:
+        db (Session): DB Session to use for calling the DB.
         table (models.Table): Table for which we should retrieve the schema.
 
     Returns:
         Dict: Dictionary where the keys are the name of each attribute, and the
             values are the type of the attribute.
     """
-    notion = Client(auth=table.integration.token)
-    notion_db = notion.databases.retrieve(database_id=table.table_id)
-    return {name: prop["type"] for name, prop in notion_db["properties"].items()}
+    # Try to retrieve an element from the DB for this table
+    db_latest_element = crud.last_table_element(db, table.id)
+
+    if db_latest_element is None:
+        # No data cached, get the schema from the Notion API
+        notion = Client(auth=table.integration.token)
+        notion_db = notion.databases.retrieve(database_id=table.table_id)
+        return {name: prop["type"] for name, prop in notion_db["properties"].items()}
+    else:
+        # We have some data, use this to create the schema
+        return {
+            attr.name: attr.type
+            for attr in [
+                *db_latest_element.boolean_attributes,
+                *db_latest_element.date_attributes,
+                *db_latest_element.number_attributes,
+                *db_latest_element.string_attributes,
+                *db_latest_element.multi_attributes,
+            ]
+        }
