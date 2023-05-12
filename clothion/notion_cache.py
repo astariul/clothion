@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from notion_client import APIResponseError  # noqa: F401
 from notion_client import Client
 from notion_client.helpers import iterate_paginated_api
 from sqlalchemy.orm import Session

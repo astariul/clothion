@@ -7,7 +7,6 @@ import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from notion_client import APIResponseError
 from sqlalchemy.orm import Session
 
 from clothion import __version__, config, notion_cache
@@ -138,7 +137,7 @@ def data(
             reset_cache=reset_cache,
             update_cache=update_cache,
         )
-    except APIResponseError:
+    except notion_cache.APIResponseError:
         raise HTTPException(status_code=404)
 
 
