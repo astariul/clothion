@@ -234,9 +234,9 @@ def files(x: str) -> Dict:
     }
 
 
-class FakeResponse:
+class QueryResponse:
     def __init__(self):
-        self.query = {
+        self.res = {
             "object": "list",
             "results": [],
             "next_cursor": "None",
@@ -246,7 +246,7 @@ class FakeResponse:
         }
 
     def add_element(self, **kwargs):
-        self.query["results"].append(
+        self.res["results"].append(
             {
                 "object": "page",
                 "id": str(uuid.uuid4()),
@@ -263,7 +263,199 @@ class FakeResponse:
         )
 
     def get(self):
-        return self.query
+        return self.res
+
+
+class RetrieveResponse:
+    def __init__(self):
+        self.res = {
+            "object": "database",
+            "id": "bc1211ca-e3f1-4939-ae34-5260b16f627c",
+            "created_time": "2021-07-08T23:50:00.000Z",
+            "last_edited_time": "2021-07-08T23:50:00.000Z",
+            "created_by": {"object": "user", "id": "9459043c-9999-4359-a430-c86902777967"},
+            "last_edited_by": {"object": "user", "id": "9459043c-9999-4359-a430-c86902777967"},
+            "icon": None,
+            "cover": None,
+            "url": "https://www.notion.so/bc1211cae3f14939ae34260b16f627c",
+            "title": [],
+            "description": [],
+            "properties": {
+                "created_at": {
+                    "id": "fF%3Ce",
+                    "name": "created_at",
+                    "type": "created_time",
+                    "created_time": {},
+                },
+                "status_attr": {
+                    "id": "fF%3Ce",
+                    "name": "status_attr",
+                    "type": "status",
+                    "status": {
+                        "options": [
+                            {
+                                "id": "fF%3Ce",
+                                "name": "Not started",
+                                "color": "default",
+                            },
+                            {
+                                "id": "fF%3C2",
+                                "name": "In progress",
+                                "color": "blue",
+                            },
+                        ],
+                        "groups": [
+                            {
+                                "id": "fF%3Ce",
+                                "name": "In Progress",
+                                "color": "blue",
+                                "option_ids": ["fF%3Ce", "fF%3C2"],
+                            }
+                        ],
+                    },
+                },
+                "rich_text_attr": {
+                    "id": "fF%3Ce",
+                    "name": "rich_text_attr",
+                    "type": "rich_text",
+                    "rich_text": {},
+                },
+                "edited_at": {
+                    "id": "fF%3Ce",
+                    "name": "edited_at",
+                    "type": "last_edited_time",
+                    "last_edited_time": {},
+                },
+                "url_attr": {
+                    "id": "fF%3Ce",
+                    "name": "url_attr",
+                    "type": "url",
+                    "url": {},
+                },
+                "checkbox_attr": {
+                    "id": "fF%3Ce",
+                    "name": "checkbox_attr",
+                    "type": "checkbox",
+                    "checkbox": {},
+                },
+                "multi_select_attr": {
+                    "id": "fF%3Ce",
+                    "name": "multi_select_attr",
+                    "type": "multi_select",
+                    "multi_select": {
+                        "options": [
+                            {
+                                "id": "fF%3Ce",
+                                "name": "Opt1",
+                                "color": "blue",
+                            },
+                            {
+                                "id": "fF%3Ce",
+                                "name": "Opt2",
+                                "color": "purple",
+                            },
+                        ]
+                    },
+                },
+                "select_attr": {
+                    "id": "fF%3Ce",
+                    "name": "select_attr",
+                    "type": "select",
+                    "select": {
+                        "options": [
+                            {
+                                "id": "fF%3Ce",
+                                "name": "Opt1",
+                                "color": "blue",
+                            },
+                            {
+                                "id": "fF%3Ce",
+                                "name": "Opt2",
+                                "color": "purple",
+                            },
+                        ]
+                    },
+                },
+                "people_attr": {
+                    "id": "fF%3Ce",
+                    "name": "people_attr",
+                    "type": "people",
+                    "people": {},
+                },
+                "phone": {
+                    "id": "fF%3Ce",
+                    "name": "phone",
+                    "type": "phone_number",
+                    "phone_number": {},
+                },
+                "date_attr": {
+                    "id": "fF%3Ce",
+                    "name": "date_attr",
+                    "type": "date",
+                    "date": {},
+                },
+                "number_attr": {
+                    "id": "fF%3Ce",
+                    "name": "number_attr",
+                    "type": "number",
+                    "number": {
+                        "format": "number",
+                    },
+                },
+                "relation_attr": {
+                    "id": "fF%3Ce",
+                    "name": "relation_attr",
+                    "type": "relation",
+                    "relation": {
+                        "database_id": "98ad959b-9999-4774-80ee-00246fb0ea9b",
+                        "type": "single_property",
+                        "single_property": {},
+                    },
+                },
+                "created_by_attr": {
+                    "id": "fF%3Ce",
+                    "name": "created_by_attr",
+                    "type": "created_by",
+                    "created_by": {},
+                },
+                "edited_by": {
+                    "id": "fF%3Ce",
+                    "name": "edited_by",
+                    "type": "last_edited_by",
+                    "last_edited_by": {},
+                },
+                "email_attr": {
+                    "id": "fF%3Ce",
+                    "name": "email_attr",
+                    "type": "email",
+                    "email": {},
+                },
+                "files_attr": {
+                    "id": "fF%3Ce",
+                    "name": "files_attr",
+                    "type": "files",
+                    "files": {},
+                },
+                "formula_attr": {
+                    "id": "fF%3Ce",
+                    "name": "formula_attr",
+                    "type": "formula",
+                    "formula": {"expression": 'format(length(prop("number")))'},
+                },
+                "title_attr": {
+                    "id": "fF%3Ce",
+                    "name": "title_attr",
+                    "type": "title",
+                    "title": {},
+                },
+            },
+            "parent": {"type": "page_id", "page_id": "98ad959b-9999-4774-80ee-00246fb0ea9b"},
+            "archived": False,
+            "is_inline": False,
+        }
+
+    def get(self):
+        return self.res
 
 
 # Global call counter, to know how many time each table is called through the Mock Notion API
@@ -274,7 +466,7 @@ class MockDBQuery:
     def query(self, database_id: str, **kwargs):  # noqa: C901
         N_CALLS[database_id] += 1
         if database_id == "table_with_basic_data":
-            response = FakeResponse()
+            response = QueryResponse()
             response.add_element(my_title=title("Element 1"), price=number(56))
             response.add_element(my_title=title("Element 2"), price=number(98))
             return response.get()
@@ -286,33 +478,33 @@ class MockDBQuery:
                 return self.query("table_with_basic_data")
             else:
                 # Second call
-                return FakeResponse().get()
+                return QueryResponse().get()
         elif database_id == "table_filter_call_new_data":
             if "filter" not in kwargs:
                 # First call
                 return self.query("table_with_basic_data")
             else:
                 # Second call
-                response = FakeResponse()
+                response = QueryResponse()
                 response.add_element(my_title=title("Element 3"), price=number(-22))
                 return response.get()
         elif database_id == "table_filter_call_updated_data":
             if "filter" not in kwargs:
-                response = FakeResponse()
+                response = QueryResponse()
                 response.add_element(my_title=title("Element 1"), price=number(56))
                 response.add_element(my_title=title("Element 2"), price=number(98))
                 # Fix the element ID to be able to modify it on second call
-                response.query["results"][1]["id"] = "6c67da52-3a1b-4673-9d59-3e6cb94c142b"
+                response.res["results"][1]["id"] = "6c67da52-3a1b-4673-9d59-3e6cb94c142b"
                 return response.get()
             else:
-                response = FakeResponse()
+                response = QueryResponse()
                 response.add_element(my_title=title("Element 2"), price=number(0))
                 # Fix the element ID to be the same as the previous one
-                response.query["results"][0]["id"] = "6c67da52-3a1b-4673-9d59-3e6cb94c142b"
+                response.res["results"][0]["id"] = "6c67da52-3a1b-4673-9d59-3e6cb94c142b"
                 return response.get()
         elif database_id == "table_filter_call_crash_normal_call_updates":
             if "filter" not in kwargs:
-                response = FakeResponse()
+                response = QueryResponse()
                 # Depending on how many time we called this function, return different results
                 if N_CALLS[database_id] == 1:
                     self.table_filter_call_crash_normal_call_updates_called = True
@@ -327,7 +519,7 @@ class MockDBQuery:
         elif database_id == "table_filter_call_crash_normal_call_updates_2":
             # Same as table_filter_call_crash_normal_call_updates
             if "filter" not in kwargs:
-                response = FakeResponse()
+                response = QueryResponse()
                 if N_CALLS[database_id] == 1:
                     self.table_filter_call_crash_normal_call_updates_2_called = True
                     response.add_element(my_title=title("Element 1"), price=number(56))
@@ -341,7 +533,7 @@ class MockDBQuery:
         elif database_id == "table_call_crash":
             raise RuntimeError
         elif database_id == "table_full_data":
-            response = FakeResponse()
+            response = QueryResponse()
             response.add_element(
                 title=title("My title"),
                 checkbox=checkbox(True),
@@ -365,6 +557,14 @@ class MockDBQuery:
                 files=files("img.png"),
             )
             return response.get()
+        else:
+            raise KeyError(f"{database_id} table query not implemented in Mock...")
+
+    def retrieve(self, database_id: str):
+        if database_id == "table_schema_full_data":
+            return RetrieveResponse().get()
+        elif database_id == "table_with_basic_data":
+            raise RuntimeError
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 

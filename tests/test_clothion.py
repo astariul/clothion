@@ -292,3 +292,48 @@ def test_access_data_full_data_range(client):
     assert data[0]["date"] == "2023-05-08T10:00:00"
     assert data[0]["people"] == ["111"]
     assert data[0]["files"] == ["img.png"]
+
+
+def test_get_schema_no_cache(client):
+    integration_id, table_id = create_table(client, "token#14", "table_schema_full_data")
+
+    response = client.get(f"/{integration_id}/{table_id}/schema")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "created_at" in data and data["created_at"] == "created_time"
+    assert "status_attr" in data and data["status_attr"] == "status"
+    assert "rich_text_attr" in data and data["rich_text_attr"] == "rich_text"
+    assert "edited_at" in data and data["edited_at"] == "last_edited_time"
+    assert "url_attr" in data and data["url_attr"] == "url"
+    assert "checkbox_attr" in data and data["checkbox_attr"] == "checkbox"
+    assert "multi_select_attr" in data and data["multi_select_attr"] == "multi_select"
+    assert "select_attr" in data and data["select_attr"] == "select"
+    assert "people_attr" in data and data["people_attr"] == "people"
+    assert "phone" in data and data["phone"] == "phone_number"
+    assert "date_attr" in data and data["date_attr"] == "date"
+    assert "number_attr" in data and data["number_attr"] == "number"
+    assert "relation_attr" in data and data["relation_attr"] == "relation"
+    assert "created_by_attr" in data and data["created_by_attr"] == "created_by"
+    assert "edited_by" in data and data["edited_by"] == "last_edited_by"
+    assert "email_attr" in data and data["email_attr"] == "email"
+    assert "files_attr" in data and data["files_attr"] == "files"
+    assert "formula_attr" in data and data["formula_attr"] == "formula"
+    assert "title_attr" in data and data["title_attr"] == "title"
+    assert "rollup" not in data
+
+
+def test_get_schema_from_cache(client):
+    integration_id, table_id = create_table(client, "token#15", "table_with_basic_data")
+
+    # Access the data to fill our cache
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 200
+
+    # Then get the schema. The Mock Notion API will crash if called for this table,
+    # but since we will extract it from our cache, the API will not be called
+    response = client.get(f"/{integration_id}/{table_id}/schema")
+    assert response.status_code == 200
+    data = response.json()
+    assert "my_title" in data and data["my_title"] == "title"
+    assert "price" in data and data["price"] == "number"
