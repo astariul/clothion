@@ -123,10 +123,10 @@ def get_schema(db: Session, table: models.Table) -> Dict:
         # No data cached, get the schema from the Notion API
         notion = Client(auth=table.integration.token)
         notion_db = notion.databases.retrieve(database_id=table.table_id)
-        return {name: prop["type"] for name, prop in notion_db["properties"].items()}
+        schema = {name: prop["type"] for name, prop in notion_db["properties"].items()}
     else:
         # We have some data, use this to create the schema
-        return {
+        schema = {
             attr.name: attr.type
             for attr in [
                 *db_latest_element.boolean_attributes,
@@ -136,3 +136,6 @@ def get_schema(db: Session, table: models.Table) -> Dict:
                 *db_latest_element.multi_attributes,
             ]
         }
+
+    # Clothion doesn't support `rollup` or `relation` attributes, remove them
+    return {name: attr_type for name, attr_type in schema.items() if attr_type not in ["relation", "rollup"]}

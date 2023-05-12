@@ -301,26 +301,26 @@ def test_get_schema_no_cache(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert "created_at" in data and data["created_at"] == "created_time"
-    assert "status_attr" in data and data["status_attr"] == "status"
-    assert "rich_text_attr" in data and data["rich_text_attr"] == "rich_text"
-    assert "edited_at" in data and data["edited_at"] == "last_edited_time"
-    assert "url_attr" in data and data["url_attr"] == "url"
-    assert "checkbox_attr" in data and data["checkbox_attr"] == "checkbox"
-    assert "multi_select_attr" in data and data["multi_select_attr"] == "multi_select"
-    assert "select_attr" in data and data["select_attr"] == "select"
-    assert "people_attr" in data and data["people_attr"] == "people"
-    assert "phone" in data and data["phone"] == "phone_number"
-    assert "date_attr" in data and data["date_attr"] == "date"
-    assert "number_attr" in data and data["number_attr"] == "number"
-    assert "relation_attr" in data and data["relation_attr"] == "relation"
-    assert "created_by_attr" in data and data["created_by_attr"] == "created_by"
-    assert "edited_by" in data and data["edited_by"] == "last_edited_by"
-    assert "email_attr" in data and data["email_attr"] == "email"
-    assert "files_attr" in data and data["files_attr"] == "files"
-    assert "formula_attr" in data and data["formula_attr"] == "formula"
-    assert "title_attr" in data and data["title_attr"] == "title"
-    assert "rollup" not in data
+    assert data.pop("created_at", None) == "created_time"
+    assert data.pop("status_attr", None) == "status"
+    assert data.pop("rich_text_attr", None) == "rich_text"
+    assert data.pop("edited_at", None) == "last_edited_time"
+    assert data.pop("url_attr", None) == "url"
+    assert data.pop("checkbox_attr", None) == "checkbox"
+    assert data.pop("multi_select_attr", None) == "multi_select"
+    assert data.pop("select_attr", None) == "select"
+    assert data.pop("people_attr", None) == "people"
+    assert data.pop("phone", None) == "phone_number"
+    assert data.pop("date_attr", None) == "date"
+    assert data.pop("number_attr", None) == "number"
+    assert "relation_attr" not in data
+    assert data.pop("created_by_attr", None) == "created_by"
+    assert data.pop("edited_by", None) == "last_edited_by"
+    assert data.pop("email_attr", None) == "email"
+    assert data.pop("files_attr", None) == "files"
+    assert data.pop("formula_attr", None) == "formula"
+    assert data.pop("title_attr", None) == "title"
+    assert len(data) == 0
 
 
 def test_get_schema_from_cache(client):
