@@ -85,10 +85,20 @@ class ReqTable:
             self.integration_id = int.from_bytes(urlsafe_b64decode((integration_b64 + "==").encode()), ENDIAN)
             self.table_id = int.from_bytes(urlsafe_b64decode((table_b64 + "==").encode()), ENDIAN)
         except binascii.Error:
+            self.integration_id = None
+            self.table_id = None
+        else:
+            self.db_table = crud.get_table(db=self.db, integration_id=self.integration_id, id=self.table_id)
+
+    def error_check_for_html(self):
+        # Ensure the table we seek exists
+        if self.integration_id is None or self.table_id is None or self.db_table is None:
             raise PageNotFound()
 
-    def get_table_db(self):
-        return crud.get_table(db=self.db, integration_id=self.integration_id, id=self.table_id)
+    def error_check_for_api(self):
+        # Ensure the table we seek exists
+        if self.integration_id is None or self.table_id is None or self.db_table is None:
+            raise HTTPException(status_code=404)
 
 
 table_router = APIRouter(
@@ -99,11 +109,8 @@ table_router = APIRouter(
 
 @table_router.get("/", tags=["HTML"], response_class=HTMLResponse)
 def widget(request: Request, req: ReqTable = Depends()):
-    # Retrieve the contents of this table from the DB
-    db_table = req.get_table_db()
-
-    if db_table is None:
-        raise PageNotFound()
+    # Ensure we the table exists
+    req.error_check_for_html()
 
     return templates.TemplateResponse("widget.html", {"request": request})
 
@@ -115,16 +122,13 @@ def data(
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
 ):
-    # Retrieve the contents of this table from the DB
-    db_table = req.get_table_db()
-
-    if db_table is None:
-        raise HTTPException(status_code=404)
+    # Ensure we the table exists
+    req.error_check_for_api()
 
     try:
         return notion_cache.get_data(
             db,
-            db_table,
+            req.db_table,
             reset_cache=reset_cache,
             update_cache=update_cache,
         )
@@ -134,14 +138,11 @@ def data(
 
 @table_router.get("/schema", tags=["API"])
 def schema(req: ReqTable = Depends(), db: Session = Depends(get_db)):
-    # Retrieve the contents of this table from the DB
-    db_table = req.get_table_db()
-
-    if db_table is None:
-        raise HTTPException(status_code=404)
+    # Ensure we the table exists
+    req.error_check_for_api()
 
     try:
-        return notion_cache.get_schema(db, db_table)
+        return notion_cache.get_schema(db, req.db_table)
     except notion_cache.APIResponseError:
         raise HTTPException(status_code=422)
 
