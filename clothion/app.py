@@ -105,10 +105,7 @@ def widget(request: Request, req: ReqTable = Depends()):
     if db_table is None:
         raise PageNotFound()
 
-    return templates.TemplateResponse(
-        "widget.html",
-        {"request": request},
-    )
+    return templates.TemplateResponse("widget.html", {"request": request})
 
 
 @table_router.get("/data", tags=["API"])
