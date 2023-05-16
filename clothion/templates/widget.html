@@ -7,24 +7,121 @@
         <div class="w-4 h-4 rounded-full animate-pulse bg-teal-600"></div>
     </div>
 </div>
-<div id="content" class="flex items-center p-16 bg-gray-50 text-gray-800 rounded-md hidden">
-    {{ integration_id }}
-    {{ table_id }}
+<div id="content" class="p-16 bg-gray-50 text-gray-800 rounded-md hidden">
+    <ul id="attributes" class="grid gap-x-12 gap-y-3 md:grid-cols-2 lg:grid-cols-3"></ul>
 </div>
 <div id="error" class="flex items-center p-16 bg-gray-50 text-gray-800 rounded-md hidden"></section>
-    <!-- <div class="container flex flex-col items-center justify-center px-5 mx-auto my-8"> -->
-        <div class="max-w-md text-center">
-            <h2 class="mb-8 font-extrabold text-9xl text-gray-400">
-                <span class="sr-only">Error</span>4044444
-            </h2>
-            <p class="text-2xl mb-16 font-semibold md:text-xl">Huh ? What ??</p>
-            <a rel="noopener noreferrer" href="/" class="px-8 py-3 font-semibold rounded bg-teal-600 text-gray-50">Back to homepage</a>
-        </div>
-    <!-- </div> -->
+    <div class="max-w-md text-center">
+        <h2 class="mb-8 font-extrabold text-9xl text-gray-400">
+            <span class="sr-only">Error</span>4044444
+        </h2>
+        <p class="text-2xl mb-16 font-semibold md:text-xl">Huh ? What ??</p>
+        <a rel="noopener noreferrer" href="/" class="px-8 py-3 font-semibold rounded bg-teal-600 text-gray-50">Back to homepage</a>
+    </div>
 </div>
 {% endblock %}
 {% block script %}
 <script>
+    function make_html_attribute(name, type) {
+        let element = document.createElement("li");
+        element.setAttribute('class', 'flex items-center space-x-3');
+        element.style.height = '24px';
+
+        // Set a different SVG for each type of element
+        if (["title", "rich_text", "text", "url", "email", "phone_number"].includes(type)) {
+            element.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-align-justified" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M4 6l16 0"></path>
+                    <path d="M4 12l16 0"></path>
+                    <path d="M4 18l12 0"></path>
+                </svg>
+                <span>${name}</span>
+            `;
+        } else if (type === "number") {
+            element.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-123" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M3 10l2 -2v8"></path>
+                    <path d="M9 8h3a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 0 -1 1v2a1 1 0 0 0 1 1h3"></path>
+                    <path d="M17 8h2.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-1.5h1.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-2.5"></path>
+                </svg>
+                <span>${name}</span>
+            `;
+        } else if (["select", "multi_select", "status"].includes(type)) {
+            element.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-selector" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 9l4 -4l4 4"></path>
+                    <path d="M16 15l-4 4l-4 -4"></path>
+                </svg>
+                <span>${name}</span>
+            `;
+        } else if (["date", "created_time", "last_edited_time"].includes(type)) {
+            element.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"></path>
+                    <path d="M16 3v4"></path>
+                    <path d="M8 3v4"></path>
+                    <path d="M4 11h16"></path>
+                    <path d="M11 15h1"></path>
+                    <path d="M12 15v3"></path>
+                </svg>
+                <span>${name}</span>
+            `;
+        } else if (["people", "created_by", "last_edited_by"].includes(type)) {
+            element.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path>
+                    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path>
+                </svg>
+                <span>${name}</span>
+            `;
+        } else if (["files", "file"].includes(type)) {
+            element.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-paperclip" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"></path>
+                </svg>
+                <span>${name}</span>
+            `;
+        } else if (type === "checkbox") {
+            element.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-checkbox" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M9 11l3 3l8 -8"></path>
+                    <path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9"></path>
+                </svg>
+                <span>${name}</span>
+            `;
+        } else if (type === "formula") {
+            element.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-math-function" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M3 19a2 2 0 0 0 2 2c2 0 2 -4 3 -9s1 -9 3 -9a2 2 0 0 1 2 2"></path>
+                    <path d="M5 12h6"></path>
+                    <path d="M15 12l6 6"></path>
+                    <path d="M15 18l6 -6"></path>
+                </svg>
+                <span>${name}</span>
+            `;
+        } else {
+            element.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-alien" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M11 17a2.5 2.5 0 0 0 2 0"></path>
+                    <path d="M12 3c-4.664 0 -7.396 2.331 -7.862 5.595a11.816 11.816 0 0 0 2 8.592a10.777 10.777 0 0 0 3.199 3.064c1.666 1 3.664 1 5.33 0a10.777 10.777 0 0 0 3.199 -3.064a11.89 11.89 0 0 0 2 -8.592c-.466 -3.265 -3.198 -5.595 -7.862 -5.595z"></path>
+                    <path d="M8 11l2 2"></path>
+                    <path d="M16 11l-2 2"></path>
+                </svg>
+                <span>${name}</span>
+            `;
+        }
+        return element
+    }
+
     const data_url = window.location.href + 'schema';
     fetch(data_url)
         .then(response => {
@@ -32,11 +129,14 @@
                 document.getElementById("loader").classList.add("hidden");
                 document.getElementById("error").classList.remove("hidden");
             } else if (response.status == 200) {
+                response.json().then(data => {
+                    let list = document.getElementById("attributes");
+                    for (const [name, type] of Object.entries(data)) {
+                        list.appendChild(make_html_attribute(name, type));
+                    }
+                });
                 document.getElementById("loader").classList.add("hidden");
                 document.getElementById("content").classList.remove("hidden");
-                response.json().then(data => {
-                    console.log(data)
-                })
             }
         });
 </script>
