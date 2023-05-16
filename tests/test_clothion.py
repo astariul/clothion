@@ -337,3 +337,10 @@ def test_get_schema_from_cache(client):
     data = response.json()
     assert "my_title" in data and data["my_title"] == "title"
     assert "price" in data and data["price"] == "number"
+
+
+def test_get_schema_handle_api_error(client):
+    integration_id, table_id = create_table(client, "token#16", "table_api_error")
+
+    response = client.get(f"/{integration_id}/{table_id}/schema")
+    assert response.status_code == 422

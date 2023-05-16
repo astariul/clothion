@@ -565,6 +565,8 @@ class MockDBQuery:
             return RetrieveResponse().get()
         elif database_id == "table_with_basic_data":
             raise RuntimeError
+        elif database_id == "table_api_error":
+            raise notion_client.APIResponseError(httpx.Response(401), "", "")
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 
