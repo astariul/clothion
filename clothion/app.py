@@ -107,7 +107,7 @@ def widget(request: Request, req: ReqTable = Depends()):
 
     return templates.TemplateResponse(
         "widget.html",
-        {"request": request, "integration_id": db_table.integration.token, "table_id": db_table.table_id},
+        {"request": request},
     )
 
 
