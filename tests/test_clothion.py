@@ -139,6 +139,16 @@ def test_access_data_of_freshly_created_table(client):
     assert {"my_title": "Element 2", "price": 98} in data
 
 
+def test_access_inexisting_data(client):
+    response = client.get("/000000/000000/data")
+    assert response.status_code == 404
+
+
+def test_access_wrong_b64_data(client):
+    response = client.get("/1/1/data")
+    assert response.status_code == 404
+
+
 def test_access_data_handle_api_error(client):
     integration_id, table_id = create_table(client, "token#6", "table_api_error")
 
@@ -337,6 +347,16 @@ def test_get_schema_from_cache(client):
     data = response.json()
     assert "my_title" in data and data["my_title"] == "title"
     assert "price" in data and data["price"] == "number"
+
+
+def test_access_inexisting_schema(client):
+    response = client.get("/000000/000000/schema")
+    assert response.status_code == 404
+
+
+def test_access_wrong_b64_schema(client):
+    response = client.get("/1/1/schema")
+    assert response.status_code == 404
 
 
 def test_get_schema_handle_api_error(client):
