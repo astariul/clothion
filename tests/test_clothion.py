@@ -143,7 +143,7 @@ def test_access_data_handle_api_error(client):
     integration_id, table_id = create_table(client, "token#6", "table_api_error")
 
     response = client.get(f"/{integration_id}/{table_id}/data")
-    assert response.status_code == 404
+    assert response.status_code == 422
 
 
 def test_access_data_cached_after_first_call(client):

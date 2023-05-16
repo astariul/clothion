@@ -132,7 +132,7 @@ def data(
             update_cache=update_cache,
         )
     except notion_cache.APIResponseError:
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=422)
 
 
 @table_router.get("/schema", tags=["API"])
@@ -146,7 +146,7 @@ def schema(req: ReqTable = Depends(), db: Session = Depends(get_db)):
     try:
         return notion_cache.get_schema(db, db_table)
     except notion_cache.APIResponseError:
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=422)
 
 
 app.include_router(table_router)
