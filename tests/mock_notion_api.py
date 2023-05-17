@@ -547,7 +547,7 @@ class MockDBQuery:
                 created_at=created_at("2023-05-07T14:02:00.000Z"),
                 created_by=created_by("111"),
                 edited_at=edited_at("2023-05-07T14:08:00.000Z"),
-                edited_by=created_by("111"),
+                edited_by=edited_by("111"),
                 rich_text=rich_text("Such a bore"),
                 select=select("Option 1"),
                 multi_select=multi_select(["Opt1", "Opt2"]),
