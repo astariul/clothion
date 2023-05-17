@@ -557,6 +557,11 @@ class MockDBQuery:
                 files=files("img.png"),
             )
             return response.get()
+        elif database_id == "table_too_much":
+            response = QueryResponse()
+            for i in range(105):
+                response.add_element(my_title=title(f"Element {i}"), price=number(i * 2 + 4))
+            return response.get()
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 

@@ -304,6 +304,13 @@ def test_access_data_full_data_range(client):
     assert data[0]["files"] == ["img.png"]
 
 
+def test_access_too_much_data(client):
+    integration_id, table_id = create_table(client, "token#18", "table_too_much")
+
+    response = client.get(f"/{integration_id}/{table_id}/data")
+    assert response.status_code == 413
+
+
 def test_get_schema_no_cache(client):
     integration_id, table_id = create_table(client, "token#14", "table_schema_full_data")
 
