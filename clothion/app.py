@@ -109,7 +109,7 @@ table_router = APIRouter(
 
 @table_router.get("/", tags=["HTML"], response_class=HTMLResponse)
 def widget(request: Request, req: ReqTable = Depends()):
-    # Ensure we the table exists
+    # Ensure the table exists
     req.error_check_for_html()
 
     return templates.TemplateResponse("widget.html", {"request": request})
@@ -122,7 +122,7 @@ def data(
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
 ):
-    # Ensure we the table exists
+    # Ensure the table exists
     req.error_check_for_api()
 
     try:
@@ -138,13 +138,21 @@ def data(
 
 @table_router.get("/schema", tags=["API"])
 def schema(req: ReqTable = Depends(), db: Session = Depends(get_db)):
-    # Ensure we the table exists
+    # Ensure the table exists
     req.error_check_for_api()
 
     try:
         return notion_cache.get_schema(db, req.db_table)
     except notion_cache.APIResponseError:
         raise HTTPException(status_code=422)
+
+
+@table_router.get("/refresh", tags=["HTML"], response_class=HTMLResponse)
+def refresh(request: Request, req: ReqTable = Depends()):
+    # Ensure the table exists
+    req.error_check_for_html()
+
+    return templates.TemplateResponse("refresh.html", {"request": request})
 
 
 app.include_router(table_router)
