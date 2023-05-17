@@ -364,3 +364,23 @@ def test_get_schema_handle_api_error(client):
 
     response = client.get(f"/{integration_id}/{table_id}/schema")
     assert response.status_code == 422
+
+
+def test_refresh_page(client):
+    integration_id, table_id = create_table(client, "token#17", "id#17")
+
+    response = client.get(f"/{integration_id}/{table_id}/refresh")
+    assert response.status_code == 200
+    assert response.template.name == "refresh.html"
+
+
+def test_access_inexisting_refresh(client):
+    response = client.get("/000000/000000/refresh")
+    assert response.status_code == 404
+    assert response.template.name == "404.html"
+
+
+def test_access_wrong_b64_refresh(client):
+    response = client.get("/1/1/refresh")
+    assert response.status_code == 404
+    assert response.template.name == "404.html"
