@@ -240,5 +240,5 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
     return db_element
 
 
-def get_elements_of_table(db: Session, table_id: int):
-    return db.query(models.Element).filter(models.Element.table_id == table_id).all()
+def get_elements_of_table(db: Session, table_id: int, limit: int = 100):
+    return db.query(models.Element).filter(models.Element.table_id == table_id).limit(limit).all()

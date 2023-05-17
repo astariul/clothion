@@ -8,6 +8,13 @@ from sqlalchemy.orm import Session
 from clothion.database import crud, models
 
 
+MAX_ELEMENTS = 100
+
+
+class TooMuchElements(Exception):
+    pass
+
+
 def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
     """Helper function that takes care of extracting the DB data and convert it
     into JSON data.
@@ -16,10 +23,18 @@ def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
         db (Session): DB Session to use for calling the DB.
         db_table_id (int): ID of the Table from which to extract the data.
 
+    Raises:
+        TooMuchElements: Exception raised if the number of elements to return
+            is bigger than the limit (MAX_ELEMENTS).
+
     Returns:
         List[Dict]: JSON data corresponding to this table.
     """
-    db_elements = crud.get_elements_of_table(db, db_table_id)
+    db_elements = crud.get_elements_of_table(db, db_table_id, limit=MAX_ELEMENTS + 1)
+
+    # If there is too much data, raise an exception so the server can properly inform the client
+    if len(db_elements) > MAX_ELEMENTS:
+        raise TooMuchElements()
 
     data = []
     for element in db_elements:

@@ -133,7 +133,13 @@ def data(
             update_cache=update_cache,
         )
     except notion_cache.APIResponseError:
-        raise HTTPException(status_code=422)
+        raise HTTPException(status_code=422, detail="Error with the Notion API")
+    except notion_cache.TooMuchElements:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Your data contains more than {notion_cache.MAX_ELEMENTS} elements. Clothion has a limit on the "
+            "amount of data it can answer with, please use filters to retrieve only the data you need.",
+        )
 
 
 @table_router.get("/schema", tags=["API"])
@@ -144,7 +150,7 @@ def schema(req: ReqTable = Depends(), db: Session = Depends(get_db)):
     try:
         return notion_cache.get_schema(db, req.db_table)
     except notion_cache.APIResponseError:
-        raise HTTPException(status_code=422)
+        raise HTTPException(status_code=422, detail="Error with the Notion API")
 
 
 @table_router.get("/refresh", tags=["HTML"], response_class=HTMLResponse)
