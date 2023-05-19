@@ -168,12 +168,19 @@ def rich_text(text: str) -> Dict:
     }
 
 
-def select(x: str) -> Dict:
-    return {
-        "id": "fF%3Ce",
-        "type": "select",
-        "select": {"color": "green", "id": "d4fb0c3c-9999-453a-a5fc-6e560f101d63", "name": x},
-    }
+def select(x: str = None) -> Dict:
+    if x is None:
+        return {
+            "id": "fF%3Ce",
+            "type": "select",
+            "select": None,
+        }
+    else:
+        return {
+            "id": "fF%3Ce",
+            "type": "select",
+            "select": {"color": "green", "id": "d4fb0c3c-9999-453a-a5fc-6e560f101d63", "name": x},
+        }
 
 
 def multi_select(x: List[str]) -> Dict:
@@ -192,46 +199,67 @@ def status(x: str) -> Dict:
     }
 
 
-def date(x: str) -> Dict:
-    return {
-        "id": "fF%3Ce",
-        "type": "date",
-        "date": {
-            "start": x,
-            "end": None,
-            "time_zone": None,
-        },
-    }
+def date(x: str = None) -> Dict:
+    if x is None:
+        return {
+            "id": "fF%3Ce",
+            "type": "date",
+            "date": None,
+        }
+    else:
+        return {
+            "id": "fF%3Ce",
+            "type": "date",
+            "date": {
+                "start": x,
+                "end": None,
+                "time_zone": None,
+            },
+        }
 
 
-def people(x: str) -> Dict:
-    return {
-        "id": "fF%3Ce",
-        "type": "people",
-        "people": [
-            {
-                "id": x,
-                "object": "user",
-            }
-        ],
-    }
+def people(x: str = None) -> Dict:
+    if x is None:
+        return {
+            "id": "fF%3Ce",
+            "type": "people",
+            "people": [],
+        }
+    else:
+        return {
+            "id": "fF%3Ce",
+            "type": "people",
+            "people": [
+                {
+                    "id": x,
+                    "object": "user",
+                }
+            ],
+        }
 
 
-def files(x: str) -> Dict:
-    return {
-        "id": "fF%3Ce",
-        "type": "files",
-        "files": [
-            {
-                "name": x,
-                "type": "file",
-                "file": {
-                    "expiry_time": "2023-05-07T15:10:11.829Z",
-                    "url": "example.com",
-                },
-            }
-        ],
-    }
+def files(x: str = None) -> Dict:
+    if x is None:
+        return {
+            "id": "fF%3Ce",
+            "type": "files",
+            "files": [],
+        }
+    else:
+        return {
+            "id": "fF%3Ce",
+            "type": "files",
+            "files": [
+                {
+                    "name": x,
+                    "type": "file",
+                    "file": {
+                        "expiry_time": "2023-05-07T15:10:11.829Z",
+                        "url": "example.com",
+                    },
+                }
+            ],
+        }
 
 
 class QueryResponse:
@@ -555,6 +583,31 @@ class MockDBQuery:
                 date=date("2023-05-08T10:00:00.000+09:00"),
                 people=people("111"),
                 files=files("img.png"),
+            )
+            return response.get()
+        elif database_id == "table_empty_data":
+            response = QueryResponse()
+            response.add_element(
+                title=title(""),
+                checkbox=checkbox(False),
+                number=number(None),
+                url=url(None),
+                email=email(None),
+                phone=phone(None),
+                formula=formula("0"),
+                relation=relation(),
+                rollup=rollup(),
+                created_at=created_at("2023-05-07T14:02:00.000Z"),
+                created_by=created_by("111"),
+                edited_at=edited_at("2023-05-07T14:08:00.000Z"),
+                edited_by=edited_by("111"),
+                rich_text=rich_text(""),
+                select=select(),
+                multi_select=multi_select([]),
+                status=status("Not done"),
+                date=date(),
+                people=people(),
+                files=files(),
             )
             return response.get()
         elif database_id == "table_too_much":

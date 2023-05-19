@@ -304,6 +304,36 @@ def test_access_data_full_data_range(client):
     assert data[0]["files"] == ["img.png"]
 
 
+def test_access_data_empty_data_range(client):
+    integration_id, table_id = create_table(client, "token#19", "table_empty_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["title"] == ""
+    assert data[0]["checkbox"] is False
+    assert data[0]["number"] is None
+    assert data[0]["url"] == ""
+    assert data[0]["email"] == ""
+    assert data[0]["phone"] == ""
+    assert data[0]["formula"] == "0"
+    assert "relation" not in data[0]
+    assert "rollup" not in data[0]
+    assert data[0]["created_at"] == "2023-05-07T14:02:00"
+    assert data[0]["created_by"] == "111"
+    assert data[0]["edited_at"] == "2023-05-07T14:08:00"
+    assert data[0]["edited_by"] == "111"
+    assert data[0]["rich_text"] == ""
+    assert data[0]["select"] == ""
+    assert data[0]["multi_select"] == []
+    assert data[0]["status"] == "Not done"
+    assert data[0]["date"] is None
+    assert data[0]["people"] == []
+    assert data[0]["files"] == []
+
+
 def test_access_too_much_data(client):
     integration_id, table_id = create_table(client, "token#18", "table_too_much")
 
