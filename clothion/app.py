@@ -115,10 +115,9 @@ def widget(request: Request, req: ReqTable = Depends()):
     return templates.TemplateResponse("widget.html", {"request": request})
 
 
-@table_router.get("/data", tags=["API"])
+@table_router.post("/data", tags=["API"])
 def data(
-    reset_cache: bool = False,
-    update_cache: bool = True,
+    parameters: notion_cache.Parameters,
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
 ):
@@ -126,12 +125,7 @@ def data(
     req.error_check_for_api()
 
     try:
-        return notion_cache.get_data(
-            db,
-            req.db_table,
-            reset_cache=reset_cache,
-            update_cache=update_cache,
-        )
+        return notion_cache.get_data(db, req.db_table, parameters)
     except notion_cache.APIResponseError:
         raise HTTPException(status_code=422, detail="Error with the Notion API")
     except notion_cache.TooMuchElements:

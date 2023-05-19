@@ -3,6 +3,7 @@ from typing import Dict, List
 from notion_client import APIResponseError  # noqa: F401
 from notion_client import Client
 from notion_client.helpers import iterate_paginated_api
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from clothion.database import crud, models
@@ -13,6 +14,11 @@ MAX_ELEMENTS = 100
 
 class TooMuchElements(Exception):
     pass
+
+
+class Parameters(BaseModel):
+    reset_cache: bool = False
+    update_cache: bool = True
 
 
 def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
@@ -56,7 +62,7 @@ def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
     return data
 
 
-def get_data(db: Session, table: models.Table, reset_cache: bool = False, update_cache: bool = True) -> List[Dict]:
+def get_data(db: Session, table: models.Table, parameters: Parameters) -> List[Dict]:
     """Retrieve the data for this table.
 
     The data is cached on the DB for fast retrieval and custom queries and
@@ -68,22 +74,19 @@ def get_data(db: Session, table: models.Table, reset_cache: bool = False, update
     Args:
         db (Session): DB Session to use for calling the DB.
         table (models.Table): Table for which we should retrieve the data.
-        reset_cache (bool): If set to `True`, delete the local cache of the
-            table, and retrieve everything from Notion API.
-        update_cache (bool): If set to `False`, this method will not
-            try to update the cache using the Notion API. Faster, but
-            potentially not up-to-date. Defaults to `True`.
+        parameters (Parameters): Parameters for filtering/grouping/etc... the
+            data extracted from the DB.
 
     Returns:
         List[Dict]: Data from the Notion table.
     """
-    if reset_cache:
+    if parameters.reset_cache:
         crud.delete_elements_of_table(db, table.id)
-        update_cache = True
+        parameters.update_cache = True
 
-    if update_cache:
+    if parameters.update_cache:
         # Get the latest element to know from which date to retrieve stuff
-        db_latest_element = crud.last_table_element(db, table.id) if not reset_cache else None
+        db_latest_element = crud.last_table_element(db, table.id) if not parameters.reset_cache else None
 
         filter_kwargs = {}
         if db_latest_element is not None:
