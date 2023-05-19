@@ -13,9 +13,12 @@
 {% block script %}
 <script>
     const root_url = window.location.href.split('/').slice(0, -1).join('/');
-    const refresh_url = root_url + '/data?' + new URLSearchParams({reset_cache: true});
-    fetch(refresh_url)
-        .then(response => {
+    const refresh_url = root_url + '/data';
+    fetch(refresh_url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({reset_cache: true}),
+    }).then(response => {
             window.location.href = root_url;
         });
 </script>
