@@ -146,14 +146,14 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
     elif attr["type"] == "number":
         db_attr = models.NumberAttribute(value=attr["number"], **kwargs)
     elif attr["type"] == "select":
-        db_attr = models.StringAttribute(value=attr["select"]["name"], **kwargs)
+        db_attr = models.StringAttribute(value=attr["select"]["name"] if attr["select"] else "", **kwargs)
     elif attr["type"] == "multi_select":
         # Special case, the values will be contained in another table !
         db_attr = models.MultiAttribute(**kwargs)
     elif attr["type"] == "status":
         db_attr = models.StringAttribute(value=attr["status"]["name"], **kwargs)
     elif attr["type"] == "date":
-        db_attr = models.DateAttribute(value=isoparse(attr["date"]["start"]), **kwargs)
+        db_attr = models.DateAttribute(value=isoparse(attr["date"]["start"]) if attr["date"] else None, **kwargs)
     elif attr["type"] == "people":
         # Special case, the values will be contained in another table !
         db_attr = models.MultiAttribute(**kwargs)
@@ -161,11 +161,11 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
         # Special case, the values will be contained in another table !
         db_attr = models.MultiAttribute(**kwargs)
     elif attr["type"] == "url":
-        db_attr = models.StringAttribute(value=attr["url"], **kwargs)
+        db_attr = models.StringAttribute(value=attr["url"] if attr["url"] else "", **kwargs)
     elif attr["type"] == "email":
-        db_attr = models.StringAttribute(value=attr["email"], **kwargs)
+        db_attr = models.StringAttribute(value=attr["email"] if attr["email"] else "", **kwargs)
     elif attr["type"] == "phone_number":
-        db_attr = models.StringAttribute(value=attr["phone_number"], **kwargs)
+        db_attr = models.StringAttribute(value=attr["phone_number"] if attr["phone_number"] else "", **kwargs)
     elif attr["type"] == "formula":
         # Formula is special, the underlying data can be any type !
         db_attr = notion_attr_to_db_attr(name, attr["formula"], element_id, "formula")
