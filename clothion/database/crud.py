@@ -247,7 +247,28 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
     return db_element
 
 
-def get_attributes_of_table(db: Session, table_id: int, limit: int = 500):
-    return (
-        db.query(models.Attribute).join(models.Element).filter(models.Element.table_id == table_id).limit(limit).all()
+def get_multistring(db: Session, attribute_id: int):
+    return db.query(models.StringPart).filter(models.StringPart.attribute_id == attribute_id).all()
+
+
+def get_attributes_of_table(db: Session, table_id: int, calculate: str = None, limit: int = 500):
+    query = db.query(
+        models.Attribute.element_id,
+        models.Attribute.id,
+        models.Attribute.name,
+        models.Attribute.value_bool,
+        models.Attribute.value_date,
+        models.Attribute.value_number,
+        models.Attribute.value_string,
+        models.Attribute.is_bool,
+        models.Attribute.is_date,
+        models.Attribute.is_number,
+        models.Attribute.is_string,
+        models.Attribute.is_multistring,
     )
+
+    # Get only the attributes for the elements of the given table
+    query = query.join(models.Element).filter(models.Element.table_id == table_id)
+
+    # Limit the size of the query and return the results
+    return query.limit(limit).all()

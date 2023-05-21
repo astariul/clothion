@@ -23,13 +23,15 @@ class Parameters(BaseModel):
     calculate: str = None
 
 
-def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
+def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) -> List[Dict]:
     """Helper function that takes care of extracting the DB data and convert it
     into JSON data.
 
     Args:
         db (Session): DB Session to use for calling the DB.
         db_table_id (int): ID of the Table from which to extract the data.
+        parameters (Parameters): Parameters for filtering/grouping/etc... the
+            data to be extracted from the DB.
 
     Raises:
         TooMuchAttributes: Exception raised if the number of attributes to
@@ -38,7 +40,9 @@ def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
     Returns:
         List[Dict]: JSON data corresponding to this table.
     """
-    db_attributes = crud.get_attributes_of_table(db, db_table_id, limit=MAX_ATTRIBUTES + 1)
+    db_attributes = crud.get_attributes_of_table(
+        db, db_table_id, calculate=parameters.calculate, limit=MAX_ATTRIBUTES + 1
+    )
 
     # If there is too much data, raise an exception so the server can properly inform the client
     if len(db_attributes) > MAX_ATTRIBUTES:
@@ -55,7 +59,7 @@ def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
         elif attr.is_string:
             value = attr.value_string
         elif attr.is_multistring:
-            value = [p.text for p in attr.parts]
+            value = [db_part.text for db_part in crud.get_multistring(db, attr.id)]
 
         data[attr.element_id][attr.name] = value
 
@@ -117,7 +121,7 @@ def get_data(db: Session, table: models.Table, parameters: Parameters) -> List[D
                 # Update it in our DB
                 db_element = crud.update_element(db, db_element, element["last_edited_time"], element["properties"])
 
-    return extract_data_from_db(db, table.id)
+    return extract_data_from_db(db, table.id, parameters)
 
 
 def get_schema(db: Session, table: models.Table) -> Dict:
