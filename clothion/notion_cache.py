@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, List
 
 from notion_client import APIResponseError  # noqa: F401
@@ -9,10 +10,10 @@ from sqlalchemy.orm import Session
 from clothion.database import crud, models
 
 
-MAX_ELEMENTS = 100
+MAX_ATTRIBUTES = 500
 
 
-class TooMuchElements(Exception):
+class TooMuchAttributes(Exception):
     pass
 
 
@@ -31,36 +32,34 @@ def extract_data_from_db(db: Session, db_table_id: int) -> List[Dict]:
         db_table_id (int): ID of the Table from which to extract the data.
 
     Raises:
-        TooMuchElements: Exception raised if the number of elements to return
-            is bigger than the limit (MAX_ELEMENTS).
+        TooMuchAttributes: Exception raised if the number of attributes to
+            return is bigger than the limit (MAX_ATTRIBUTES).
 
     Returns:
         List[Dict]: JSON data corresponding to this table.
     """
-    db_elements = crud.get_elements_of_table(db, db_table_id, limit=MAX_ELEMENTS + 1)
+    db_attributes = crud.get_attributes_of_table(db, db_table_id, limit=MAX_ATTRIBUTES + 1)
 
     # If there is too much data, raise an exception so the server can properly inform the client
-    if len(db_elements) > MAX_ELEMENTS:
-        raise TooMuchElements()
+    if len(db_attributes) > MAX_ATTRIBUTES:
+        raise TooMuchAttributes()
 
-    data = []
-    for element in db_elements:
-        attributes = {}
+    data = defaultdict(lambda: {})
+    for attr in db_attributes:
+        if attr.is_bool:
+            value = attr.value_bool
+        elif attr.is_date:
+            value = attr.value_date
+        elif attr.is_number:
+            value = attr.value_number
+        elif attr.is_string:
+            value = attr.value_string
+        elif attr.is_multistring:
+            value = [p.text for p in attr.parts]
 
-        for attr in element.boolean_attributes:
-            attributes[attr.name] = attr.value
-        for attr in element.date_attributes:
-            attributes[attr.name] = attr.value
-        for attr in element.number_attributes:
-            attributes[attr.name] = attr.value
-        for attr in element.string_attributes:
-            attributes[attr.name] = attr.value
-        for attr in element.multi_attributes:
-            attributes[attr.name] = [p.text for p in attr.parts]
+        data[attr.element_id][attr.name] = value
 
-        data.append(attributes)
-
-    return data
+    return list(data.values())
 
 
 def get_data(db: Session, table: models.Table, parameters: Parameters) -> List[Dict]:
@@ -145,16 +144,7 @@ def get_schema(db: Session, table: models.Table) -> Dict:
         schema = {name: prop["type"] for name, prop in notion_db["properties"].items()}
     else:
         # We have some data, use this to create the schema
-        schema = {
-            attr.name: attr.type
-            for attr in [
-                *db_latest_element.boolean_attributes,
-                *db_latest_element.date_attributes,
-                *db_latest_element.number_attributes,
-                *db_latest_element.string_attributes,
-                *db_latest_element.multi_attributes,
-            ]
-        }
+        schema = {attr.name: attr.type for attr in db_latest_element.attributes}
 
     # Clothion doesn't support `rollup` or `relation` attributes, remove them
     return {name: attr_type for name, attr_type in schema.items() if attr_type not in ["relation", "rollup"]}

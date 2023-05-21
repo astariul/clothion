@@ -128,11 +128,11 @@ def data(
         return notion_cache.get_data(db, req.db_table, parameters)
     except notion_cache.APIResponseError:
         raise HTTPException(status_code=422, detail="Error with the Notion API")
-    except notion_cache.TooMuchElements:
+    except notion_cache.TooMuchAttributes:
         raise HTTPException(
             status_code=413,
-            detail=f"Your data contains more than {notion_cache.MAX_ELEMENTS} elements. Clothion has a limit on the "
-            "amount of data it can answer with, please use filters to retrieve only the data you need.",
+            detail=f"Your data contains more than {notion_cache.MAX_ATTRIBUTES} attributes. Clothion has a limit on "
+            "the amount of data it can answer with, please use filters to retrieve only the data you need.",
         )
 
 

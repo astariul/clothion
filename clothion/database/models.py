@@ -33,78 +33,35 @@ class Element(Base):
     table_id = Column(Integer, ForeignKey("tables.id"))
 
     table = relationship("Table", back_populates="elements")
-    boolean_attributes = relationship("BooleanAttribute", back_populates="element", passive_deletes=True)
-    date_attributes = relationship("DateAttribute", back_populates="element", passive_deletes=True)
-    number_attributes = relationship("NumberAttribute", back_populates="element", passive_deletes=True)
-    string_attributes = relationship("StringAttribute", back_populates="element", passive_deletes=True)
-    multi_attributes = relationship("MultiAttribute", back_populates="element", passive_deletes=True)
+    attributes = relationship("Attribute", back_populates="element", passive_deletes=True)
 
 
-class BooleanAttribute(Base):
-    __tablename__ = "booleans"
+class Attribute(Base):
+    __tablename__ = "attributes"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    value = Column(Boolean)
-    type = Column(String)
+    name = Column(String, nullable=False)
+    type = Column(String, nullable=False)
+    value_bool = Column(Boolean)
+    value_date = Column(DateTime)
+    value_number = Column(Float)
+    value_string = Column(String)
+    is_bool = Column(Boolean, default=False)
+    is_date = Column(Boolean, default=False)
+    is_number = Column(Boolean, default=False)
+    is_string = Column(Boolean, default=False)
+    is_multistring = Column(Boolean, default=False)
     element_id = Column(Integer, ForeignKey("elements.id", ondelete="CASCADE"))
 
-    element = relationship("Element", back_populates="boolean_attributes")
+    element = relationship("Element", back_populates="attributes")
+    parts = relationship("StringPart", back_populates="attribute", passive_deletes=True)
 
 
-class DateAttribute(Base):
-    __tablename__ = "dates"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    value = Column(DateTime)
-    type = Column(String)
-    element_id = Column(Integer, ForeignKey("elements.id", ondelete="CASCADE"))
-
-    element = relationship("Element", back_populates="date_attributes")
-
-
-class NumberAttribute(Base):
-    __tablename__ = "numbers"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    value = Column(Float)
-    type = Column(String)
-    element_id = Column(Integer, ForeignKey("elements.id", ondelete="CASCADE"))
-
-    element = relationship("Element", back_populates="number_attributes")
-
-
-class StringAttribute(Base):
-    __tablename__ = "strings"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    value = Column(String)
-    type = Column(String)
-    element_id = Column(Integer, ForeignKey("elements.id", ondelete="CASCADE"))
-
-    element = relationship("Element", back_populates="string_attributes")
-
-
-class MultiAttribute(Base):
-    __tablename__ = "multis"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    type = Column(String)
-    element_id = Column(Integer, ForeignKey("elements.id", ondelete="CASCADE"))
-
-    element = relationship("Element", back_populates="multi_attributes")
-    parts = relationship("MultiPartString", back_populates="multi", passive_deletes=True)
-
-
-class MultiPartString(Base):
+class StringPart(Base):
     __tablename__ = "stringparts"
 
     id = Column(Integer, primary_key=True, index=True)
     text = Column(String)
-    multiattribute_id = Column(Integer, ForeignKey("multis.id", ondelete="CASCADE"))
+    attribute_id = Column(Integer, ForeignKey("attributes.id", ondelete="CASCADE"))
 
-    multi = relationship("MultiAttribute", back_populates="parts")
+    attribute = relationship("Attribute", back_populates="parts")

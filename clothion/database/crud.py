@@ -109,6 +109,7 @@ def last_table_element(db: Session, table_id: int):
 
 def delete_elements_of_table(db: Session, table_id: id):
     db.query(models.Element).filter(models.Element.table_id == table_id).delete()
+    db.commit()
 
 
 def get_element_by_notion_id(db: Session, notion_id: str):
@@ -136,51 +137,61 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
     kwargs = {"name": name, "type": attr_type, "element_id": element_id}
 
     if attr["type"] == "title":
-        db_attr = models.StringAttribute(value="".join(t["plain_text"] for t in attr["title"]), **kwargs)
+        kwargs["value_string"] = "".join(t["plain_text"] for t in attr["title"])
+        kwargs["is_string"] = True
     elif attr["type"] == "checkbox":
-        db_attr = models.BooleanAttribute(value=attr["checkbox"], **kwargs)
+        kwargs["value_bool"] = attr["checkbox"]
+        kwargs["is_bool"] = True
     elif attr["type"] == "rich_text":
-        db_attr = models.StringAttribute(value="".join(t["plain_text"] for t in attr["rich_text"]), **kwargs)
+        kwargs["value_string"] = "".join(t["plain_text"] for t in attr["rich_text"])
+        kwargs["is_string"] = True
     elif attr["type"] == "string":
-        db_attr = models.StringAttribute(value=attr["string"], **kwargs)
+        kwargs["value_string"] = attr["string"]
+        kwargs["is_string"] = True
     elif attr["type"] == "number":
-        db_attr = models.NumberAttribute(value=attr["number"], **kwargs)
+        kwargs["value_number"] = attr["number"]
+        kwargs["is_number"] = True
     elif attr["type"] == "select":
-        db_attr = models.StringAttribute(value=attr["select"]["name"] if attr["select"] else "", **kwargs)
-    elif attr["type"] == "multi_select":
+        kwargs["value_string"] = attr["select"]["name"] if attr["select"] else ""
+        kwargs["is_string"] = True
+    elif attr["type"] == "multi_select" or attr["type"] == "people" or attr["type"] == "files":
         # Special case, the values will be contained in another table !
-        db_attr = models.MultiAttribute(**kwargs)
+        kwargs["is_multistring"] = True
     elif attr["type"] == "status":
-        db_attr = models.StringAttribute(value=attr["status"]["name"], **kwargs)
+        kwargs["value_string"] = attr["status"]["name"]
+        kwargs["is_string"] = True
     elif attr["type"] == "date":
-        db_attr = models.DateAttribute(value=isoparse(attr["date"]["start"]) if attr["date"] else None, **kwargs)
-    elif attr["type"] == "people":
-        # Special case, the values will be contained in another table !
-        db_attr = models.MultiAttribute(**kwargs)
-    elif attr["type"] == "files":
-        # Special case, the values will be contained in another table !
-        db_attr = models.MultiAttribute(**kwargs)
+        kwargs["value_date"] = isoparse(attr["date"]["start"]) if attr["date"] else None
+        kwargs["is_date"] = True
     elif attr["type"] == "url":
-        db_attr = models.StringAttribute(value=attr["url"] if attr["url"] else "", **kwargs)
+        kwargs["value_string"] = attr["url"] if attr["url"] else ""
+        kwargs["is_string"] = True
     elif attr["type"] == "email":
-        db_attr = models.StringAttribute(value=attr["email"] if attr["email"] else "", **kwargs)
+        kwargs["value_string"] = attr["email"] if attr["email"] else ""
+        kwargs["is_string"] = True
     elif attr["type"] == "phone_number":
-        db_attr = models.StringAttribute(value=attr["phone_number"] if attr["phone_number"] else "", **kwargs)
+        kwargs["value_string"] = attr["phone_number"] if attr["phone_number"] else ""
+        kwargs["is_string"] = True
     elif attr["type"] == "formula":
         # Formula is special, the underlying data can be any type !
-        db_attr = notion_attr_to_db_attr(name, attr["formula"], element_id, "formula")
+        return notion_attr_to_db_attr(name, attr["formula"], element_id, "formula")
     elif attr["type"] == "relation" or attr["type"] == "rollup":
-        db_attr = None
+        # Types that can't be handled by our DB
+        return None
     elif attr["type"] == "created_time":
-        db_attr = models.DateAttribute(value=isoparse(attr["created_time"]), **kwargs)
+        kwargs["value_date"] = isoparse(attr["created_time"])
+        kwargs["is_date"] = True
     elif attr["type"] == "created_by":
-        db_attr = models.StringAttribute(value=attr["created_by"]["id"], **kwargs)
+        kwargs["value_string"] = attr["created_by"]["id"]
+        kwargs["is_string"] = True
     elif attr["type"] == "last_edited_time":
-        db_attr = models.DateAttribute(value=isoparse(attr["last_edited_time"]), **kwargs)
+        kwargs["value_date"] = isoparse(attr["last_edited_time"])
+        kwargs["is_date"] = True
     elif attr["type"] == "last_edited_by":
-        db_attr = models.StringAttribute(value=attr["last_edited_by"]["id"], **kwargs)
+        kwargs["value_string"] = attr["last_edited_by"]["id"]
+        kwargs["is_string"] = True
 
-    return db_attr
+    return models.Attribute(**kwargs)
 
 
 def create_attribute(db: Session, name: str, attr: Dict, element_id: int):
@@ -199,7 +210,7 @@ def create_attribute(db: Session, name: str, attr: Dict, element_id: int):
         db.refresh(db_attr)
 
         for value in attr[t]:
-            db_attr_part = models.MultiPartString(text=value[KEY_NAME[t]], multiattribute_id=db_attr.id)
+            db_attr_part = models.StringPart(text=value[KEY_NAME[t]], attribute_id=db_attr.id)
             db.add(db_attr_part)
 
         db.commit()
@@ -226,11 +237,7 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
     db.commit()
 
     # Delete all of its previous attribute
-    db.query(models.BooleanAttribute).filter(models.BooleanAttribute.element_id == db_element.id).delete()
-    db.query(models.DateAttribute).filter(models.DateAttribute.element_id == db_element.id).delete()
-    db.query(models.NumberAttribute).filter(models.NumberAttribute.element_id == db_element.id).delete()
-    db.query(models.StringAttribute).filter(models.StringAttribute.element_id == db_element.id).delete()
-    db.query(models.MultiAttribute).filter(models.MultiAttribute.element_id == db_element.id).delete()
+    db.query(models.Attribute).filter(models.Attribute.element_id == db_element.id).delete()
 
     # Recreate the attributes from the updated values
     for name, attr in attributes.items():
@@ -240,5 +247,7 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
     return db_element
 
 
-def get_elements_of_table(db: Session, table_id: int, limit: int = 100):
-    return db.query(models.Element).filter(models.Element.table_id == table_id).limit(limit).all()
+def get_attributes_of_table(db: Session, table_id: int, limit: int = 500):
+    return (
+        db.query(models.Attribute).join(models.Element).filter(models.Element.table_id == table_id).limit(limit).all()
+    )
