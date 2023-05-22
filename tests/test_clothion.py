@@ -45,7 +45,7 @@ def test_version_route(client):
 
 
 def test_create_new_integration_new_table(client):
-    form_data = {"integration": "token#1", "table": "id#1"}
+    form_data = {"integration": "secret_token", "table": "id#1"}
     response = client.post("/create", data=form_data)
 
     # We have one redirection, leading to our newly created resource
@@ -63,7 +63,7 @@ def test_create_new_integration_new_table(client):
 
 def test_create_existing_integration_existing_table(client):
     # First, create an integration and a table
-    form_data = {"integration": "token#2", "table": "id#2"}
+    form_data = {"integration": "secret_token", "table": "id#2"}
     response = client.post("/create", data=form_data)
     assert response.status_code == 200
     integration_id, table_id = response.url.path.strip("/").split("/")
@@ -80,7 +80,7 @@ def test_create_existing_integration_existing_table(client):
 
 def test_create_existing_integration_new_table(client):
     # First, create an integration and a table
-    form_data = {"integration": "token#3", "table": "id#3"}
+    form_data = {"integration": "secret_token", "table": "id#3"}
     response = client.post("/create", data=form_data)
     assert response.status_code == 200
     integration_id, table_id = response.url.path.strip("/").split("/")
@@ -98,13 +98,13 @@ def test_create_existing_integration_new_table(client):
 
 def test_create_new_integration_existing_table(client):
     # First, create an integration and a table
-    form_data = {"integration": "token#4", "table": "id#4"}
+    form_data = {"integration": "secret_token", "table": "id#4"}
     response = client.post("/create", data=form_data)
     assert response.status_code == 200
     integration_id, table_id = response.url.path.strip("/").split("/")
 
     # Then, try to create a new integration but the same table
-    form_data["integration"] = "token#4-2"
+    form_data["integration"] = "secret_token#2"
     response = client.post("/create", data=form_data)
 
     # We should receive different ID for both the integration and the table
@@ -128,7 +128,7 @@ def test_access_wrong_b64_resource(client):
 
 
 def test_access_data_of_freshly_created_table(client):
-    integration_id, table_id = create_table(client, "token#5", "table_with_basic_data")
+    integration_id, table_id = create_table(client, "secret_token", "table_with_basic_data")
 
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
     assert response.status_code == 200
@@ -150,14 +150,14 @@ def test_access_wrong_b64_data(client):
 
 
 def test_access_data_handle_api_error(client):
-    integration_id, table_id = create_table(client, "token#6", "table_api_error")
+    integration_id, table_id = create_table(client, "secret_token", "table_api_error")
 
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
     assert response.status_code == 422
 
 
 def test_access_data_cached_after_first_call(client):
-    integration_id, table_id = create_table(client, "token#7", "table_filter_call_no_data")
+    integration_id, table_id = create_table(client, "secret_token", "table_filter_call_no_data")
 
     # First call populate the cache
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
@@ -177,7 +177,7 @@ def test_access_data_cached_after_first_call(client):
 
 
 def test_access_data_new_element_on_second_call(client):
-    integration_id, table_id = create_table(client, "token#8", "table_filter_call_new_data")
+    integration_id, table_id = create_table(client, "secret_token", "table_filter_call_new_data")
 
     # First call get the basic data
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
@@ -199,7 +199,7 @@ def test_access_data_new_element_on_second_call(client):
 
 
 def test_access_data_updated_element_on_second_call(client):
-    integration_id, table_id = create_table(client, "token#9", "table_filter_call_updated_data")
+    integration_id, table_id = create_table(client, "secret_token", "table_filter_call_updated_data")
 
     # First call get the basic data
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
@@ -220,7 +220,7 @@ def test_access_data_updated_element_on_second_call(client):
 
 
 def test_access_data_reset_cache(client):
-    integration_id, table_id = create_table(client, "token#10", "table_filter_call_crash_normal_call_updates")
+    integration_id, table_id = create_table(client, "secret_token", "table_filter_call_crash_normal_call_updates")
 
     # First call get the basic data
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
@@ -242,7 +242,7 @@ def test_access_data_reset_cache(client):
 
 
 def test_access_data_only_cache_on_existing_data(client):
-    integration_id, table_id = create_table(client, "token#11", "table_filter_call_crash_normal_call_updates_2")
+    integration_id, table_id = create_table(client, "secret_token", "table_filter_call_crash_normal_call_updates_2")
 
     # First call get the basic data
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
@@ -265,7 +265,7 @@ def test_access_data_only_cache_on_existing_data(client):
 
 
 def test_access_data_only_cache_on_no_data(client):
-    integration_id, table_id = create_table(client, "token#12", "table_call_crash")
+    integration_id, table_id = create_table(client, "secret_token", "table_call_crash")
 
     # If the Mock Notion API is called, it crashes and fails the test.
     # But we set `update_cache` to `False`, so the Notion API is not called at all
@@ -275,7 +275,7 @@ def test_access_data_only_cache_on_no_data(client):
 
 
 def test_access_data_full_data_range(client):
-    integration_id, table_id = create_table(client, "token#13", "table_full_data")
+    integration_id, table_id = create_table(client, "secret_token", "table_full_data")
 
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
     assert response.status_code == 200
@@ -305,7 +305,7 @@ def test_access_data_full_data_range(client):
 
 
 def test_access_data_empty_data_range(client):
-    integration_id, table_id = create_table(client, "token#19", "table_empty_data")
+    integration_id, table_id = create_table(client, "secret_token", "table_empty_data")
 
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
     assert response.status_code == 200
@@ -335,14 +335,14 @@ def test_access_data_empty_data_range(client):
 
 
 def test_access_too_much_data(client):
-    integration_id, table_id = create_table(client, "token#18", "table_too_much")
+    integration_id, table_id = create_table(client, "secret_token", "table_too_much")
 
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
     assert response.status_code == 413
 
 
 def test_get_schema_no_cache(client):
-    integration_id, table_id = create_table(client, "token#14", "table_schema_full_data")
+    integration_id, table_id = create_table(client, "secret_token", "table_schema_full_data")
 
     response = client.get(f"/{integration_id}/{table_id}/schema")
     assert response.status_code == 200
@@ -371,7 +371,7 @@ def test_get_schema_no_cache(client):
 
 
 def test_get_schema_from_cache(client):
-    integration_id, table_id = create_table(client, "token#15", "table_with_basic_data")
+    integration_id, table_id = create_table(client, "secret_token", "table_with_basic_data")
 
     # Access the data to fill our cache
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
@@ -397,14 +397,14 @@ def test_access_wrong_b64_schema(client):
 
 
 def test_get_schema_handle_api_error(client):
-    integration_id, table_id = create_table(client, "token#16", "table_api_error")
+    integration_id, table_id = create_table(client, "secret_token", "table_api_error")
 
     response = client.get(f"/{integration_id}/{table_id}/schema")
     assert response.status_code == 422
 
 
 def test_refresh_page(client):
-    integration_id, table_id = create_table(client, "token#17", "id#17")
+    integration_id, table_id = create_table(client, "secret_token", "id#17")
 
     response = client.get(f"/{integration_id}/{table_id}/refresh")
     assert response.status_code == 200
