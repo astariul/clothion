@@ -1,3 +1,4 @@
+import json
 import uuid
 from typing import Callable, Dict
 
@@ -161,8 +162,14 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
     elif attr["type"] == "select":
         kwargs["value_string"] = attr["select"]["name"] if attr["select"] else ""
         kwargs["is_string"] = True
-    elif attr["type"] == "multi_select" or attr["type"] == "people" or attr["type"] == "files":
-        # Special case, the values will be contained in another table !
+    elif attr["type"] == "multi_select":
+        kwargs["value_string"] = json.dumps([x["name"] for x in attr["multi_select"]])
+        kwargs["is_multistring"] = True
+    elif attr["type"] == "people":
+        kwargs["value_string"] = json.dumps([x["id"] for x in attr["people"]])
+        kwargs["is_multistring"] = True
+    elif attr["type"] == "files":
+        kwargs["value_string"] = json.dumps([x["name"] for x in attr["files"]])
         kwargs["is_multistring"] = True
     elif attr["type"] == "status":
         kwargs["value_string"] = attr["status"]["name"]
@@ -210,18 +217,6 @@ def create_attribute(db: Session, name: str, attr: Dict, element_id: int):
     db.add(db_attr)
     db.commit()
 
-    # Special case, for attributes with multiple values, we need to add the
-    # values in a different table as well !
-    t = attr["type"]
-    if t == "files" or t == "multi_select" or t == "people":
-        db.refresh(db_attr)
-
-        for value in attr[t]:
-            db_attr_part = models.StringPart(text=value[KEY_NAME[t]], attribute_id=db_attr.id)
-            db.add(db_attr_part)
-
-        db.commit()
-
 
 def create_element(db: Session, notion_id: str, table_id: int, last_edited: str, attributes: Dict):
     # First, create the element
@@ -252,10 +247,6 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
 
     db.refresh(db_element)
     return db_element
-
-
-def get_multistring(db: Session, attribute_id: int):
-    return db.query(models.StringPart).filter(models.StringPart.attribute_id == attribute_id).all()
 
 
 def get_attributes_of_table(db: Session, table_id: int, calculate: str = None, limit: int = 500):

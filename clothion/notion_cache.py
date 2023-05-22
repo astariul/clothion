@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from typing import Dict, List, Literal
 
@@ -59,7 +60,7 @@ def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) 
         elif attr.is_string:
             value = attr.value_string
         elif attr.is_multistring:
-            value = [db_part.text for db_part in crud.get_multistring(db, attr.id)]
+            value = json.loads(attr.value_string)
 
         data[attr.element_id][attr.name] = value
 

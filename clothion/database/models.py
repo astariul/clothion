@@ -54,14 +54,3 @@ class Attribute(Base):
     element_id = Column(Integer, ForeignKey("elements.id", ondelete="CASCADE"))
 
     element = relationship("Element", back_populates="attributes")
-    parts = relationship("StringPart", back_populates="attribute", passive_deletes=True)
-
-
-class StringPart(Base):
-    __tablename__ = "stringparts"
-
-    id = Column(Integer, primary_key=True, index=True)
-    text = Column(String)
-    attribute_id = Column(Integer, ForeignKey("attributes.id", ondelete="CASCADE"))
-
-    attribute = relationship("Attribute", back_populates="parts")
