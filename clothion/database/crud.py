@@ -145,13 +145,15 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
     kwargs = {"name": name, "type": attr_type, "element_id": element_id}
 
     if attr["type"] == "title":
-        kwargs["value_string"] = "".join(t["plain_text"] for t in attr["title"])
+        if attr["title"]:
+            kwargs["value_string"] = "".join(t["plain_text"] for t in attr["title"])
         kwargs["is_string"] = True
     elif attr["type"] == "checkbox":
         kwargs["value_bool"] = attr["checkbox"]
         kwargs["is_bool"] = True
     elif attr["type"] == "rich_text":
-        kwargs["value_string"] = "".join(t["plain_text"] for t in attr["rich_text"])
+        if attr["rich_text"]:
+            kwargs["value_string"] = "".join(t["plain_text"] for t in attr["rich_text"])
         kwargs["is_string"] = True
     elif attr["type"] == "string":
         kwargs["value_string"] = attr["string"]
@@ -160,31 +162,39 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
         kwargs["value_number"] = attr["number"]
         kwargs["is_number"] = True
     elif attr["type"] == "select":
-        kwargs["value_string"] = attr["select"]["name"] if attr["select"] else ""
+        if attr["select"]:
+            kwargs["value_string"] = attr["select"]["name"]
         kwargs["is_string"] = True
     elif attr["type"] == "multi_select":
-        kwargs["value_string"] = json.dumps([x["name"] for x in attr["multi_select"]])
+        if attr["multi_select"]:
+            kwargs["value_string"] = json.dumps([x["name"] for x in attr["multi_select"]])
         kwargs["is_multistring"] = True
     elif attr["type"] == "people":
-        kwargs["value_string"] = json.dumps([x["id"] for x in attr["people"]])
+        if attr["people"]:
+            kwargs["value_string"] = json.dumps([x["id"] for x in attr["people"]])
         kwargs["is_multistring"] = True
     elif attr["type"] == "files":
-        kwargs["value_string"] = json.dumps([x["name"] for x in attr["files"]])
+        if attr["files"]:
+            kwargs["value_string"] = json.dumps([x["name"] for x in attr["files"]])
         kwargs["is_multistring"] = True
     elif attr["type"] == "status":
         kwargs["value_string"] = attr["status"]["name"]
         kwargs["is_string"] = True
     elif attr["type"] == "date":
-        kwargs["value_date"] = isoparse(attr["date"]["start"]) if attr["date"] else None
+        if attr["date"]:
+            kwargs["value_date"] = isoparse(attr["date"]["start"])
         kwargs["is_date"] = True
     elif attr["type"] == "url":
-        kwargs["value_string"] = attr["url"] if attr["url"] else ""
+        if attr["url"]:
+            kwargs["value_string"] = attr["url"]
         kwargs["is_string"] = True
     elif attr["type"] == "email":
-        kwargs["value_string"] = attr["email"] if attr["email"] else ""
+        if attr["email"]:
+            kwargs["value_string"] = attr["email"]
         kwargs["is_string"] = True
     elif attr["type"] == "phone_number":
-        kwargs["value_string"] = attr["phone_number"] if attr["phone_number"] else ""
+        if attr["phone_number"]:
+            kwargs["value_string"] = attr["phone_number"]
         kwargs["is_string"] = True
     elif attr["type"] == "formula":
         # Formula is special, the underlying data can be any type !
