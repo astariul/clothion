@@ -432,3 +432,10 @@ def test_calculate_data_sum(client):
 
     assert len(data) == 1
     assert {"price": 56.5 + 98 + -13, "quantity": 3 + 0 + 1} in data
+
+
+def test_data_wrong_parameters(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_data_sum")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "wrong"})
+    assert response.status_code == 422

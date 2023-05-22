@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Literal
 
 from notion_client import APIResponseError  # noqa: F401
 from notion_client import Client
@@ -20,7 +20,7 @@ class TooMuchAttributes(Exception):
 class Parameters(BaseModel):
     reset_cache: bool = False
     update_cache: bool = True
-    calculate: str = None
+    calculate: Literal[None, "sum"] = None
 
 
 def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) -> List[Dict]:
