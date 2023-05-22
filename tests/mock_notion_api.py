@@ -615,12 +615,12 @@ class MockDBQuery:
             for i in range(300):
                 response.add_element(my_title=title(f"Element {i}"), price=number(i * 2 + 4))
             return response.get()
-        elif database_id == "table_for_data_sum":
+        elif database_id == "table_for_number_data":
             response = QueryResponse()
-            response.add_element(my_title=title("Elem1"), price=number(56.5), quantity=number(3))
+            response.add_element(my_title=title("Elem1"), price=number(56.5), quantity=number(0))
             response.add_element(my_title=title("Elem2"), price=number(98), quantity=number(None))
-            response.add_element(my_title=title("Elem3"), price=number(None), quantity=number(0))
-            response.add_element(my_title=title("Elem3"), price=number(-13), quantity=number(1))
+            response.add_element(my_title=title("Elem3"), price=number(None), quantity=number(None))
+            response.add_element(my_title=title("Elem4"), price=number(-13), quantity=number(3))
             return response.get()
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")

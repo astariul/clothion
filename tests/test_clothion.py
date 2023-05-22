@@ -424,14 +424,14 @@ def test_access_wrong_b64_refresh(client):
 
 
 def test_calculate_data_sum(client):
-    integration_id, table_id = create_table(client, "secret_token", "table_for_data_sum")
+    integration_id, table_id = create_table(client, "secret_token", "table_for_number_data")
 
     response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "sum"})
     assert response.status_code == 200
     data = response.json()
 
     assert len(data) == 1
-    assert {"price": 56.5 + 98 + -13, "quantity": 3 + 0 + 1} in data
+    assert {"price": 56.5 + 98 + -13, "quantity": 3 + 0} in data
 
 
 def test_data_wrong_parameters(client):
