@@ -421,3 +421,14 @@ def test_access_wrong_b64_refresh(client):
     response = client.get("/1/1/refresh")
     assert response.status_code == 404
     assert response.template.name == "404.html"
+
+
+def test_calculate_data_sum(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_data_sum")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "sum"})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert {"price": 56.5 + 98 + -13, "quantity": 3 + 0 + 1} in data
