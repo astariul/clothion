@@ -6,33 +6,40 @@ import httpx
 import notion_client
 
 
-def title(text: str) -> Dict:
-    return {
-        "id": "title",
-        "type": "title",
-        "title": [
-            {
-                "type": "text",
-                "text": {
-                    "content": text,
-                    "link": "None",
-                },
-                "annotations": {
-                    "bold": False,
-                    "italic": False,
-                    "strikethrough": False,
-                    "underline": False,
-                    "code": False,
-                    "color": "default",
-                },
-                "plain_text": text,
-                "href": "None",
-            }
-        ],
-    }
+def title(text: str = None) -> Dict:
+    if text is None:
+        return {
+            "id": "title",
+            "type": "title",
+            "title": [],
+        }
+    else:
+        return {
+            "id": "title",
+            "type": "title",
+            "title": [
+                {
+                    "type": "text",
+                    "text": {
+                        "content": text,
+                        "link": "None",
+                    },
+                    "annotations": {
+                        "bold": False,
+                        "italic": False,
+                        "strikethrough": False,
+                        "underline": False,
+                        "code": False,
+                        "color": "default",
+                    },
+                    "plain_text": text,
+                    "href": "None",
+                }
+            ],
+        }
 
 
-def number(x: Union[int, float]) -> Dict:
+def number(x: Union[int, float] = None) -> Dict:
     return {
         "id": "fF%3Ce",
         "type": "number",
@@ -40,7 +47,7 @@ def number(x: Union[int, float]) -> Dict:
     }
 
 
-def checkbox(x: bool) -> Dict:
+def checkbox(x: bool = False) -> Dict:
     return {
         "id": "fF%3Ce",
         "type": "checkbox",
@@ -48,7 +55,7 @@ def checkbox(x: bool) -> Dict:
     }
 
 
-def url(x: str) -> Dict:
+def url(x: str = None) -> Dict:
     return {
         "id": "fF%3Ce",
         "type": "url",
@@ -56,7 +63,7 @@ def url(x: str) -> Dict:
     }
 
 
-def email(x: str) -> Dict:
+def email(x: str = None) -> Dict:
     return {
         "id": "fF%3Ce",
         "type": "email",
@@ -64,7 +71,7 @@ def email(x: str) -> Dict:
     }
 
 
-def phone(x: str) -> Dict:
+def phone(x: str = None) -> Dict:
     return {
         "id": "fF%3Ce",
         "type": "phone_number",
@@ -142,30 +149,37 @@ def edited_by(x: str) -> Dict:
     }
 
 
-def rich_text(text: str) -> Dict:
-    return {
-        "id": "fF%3Ce",
-        "type": "rich_text",
-        "rich_text": [
-            {
-                "type": "text",
-                "text": {
-                    "content": text,
-                    "link": "None",
-                },
-                "annotations": {
-                    "bold": False,
-                    "italic": False,
-                    "strikethrough": False,
-                    "underline": False,
-                    "code": False,
-                    "color": "default",
-                },
-                "plain_text": text,
-                "href": "None",
-            }
-        ],
-    }
+def rich_text(text: str = None) -> Dict:
+    if text is None:
+        return {
+            "id": "fF%3Ce",
+            "type": "rich_text",
+            "rich_text": [],
+        }
+    else:
+        return {
+            "id": "fF%3Ce",
+            "type": "rich_text",
+            "rich_text": [
+                {
+                    "type": "text",
+                    "text": {
+                        "content": text,
+                        "link": "None",
+                    },
+                    "annotations": {
+                        "bold": False,
+                        "italic": False,
+                        "strikethrough": False,
+                        "underline": False,
+                        "code": False,
+                        "color": "default",
+                    },
+                    "plain_text": text,
+                    "href": "None",
+                }
+            ],
+        }
 
 
 def select(x: str = None) -> Dict:
@@ -588,12 +602,12 @@ class MockDBQuery:
         elif database_id == "table_empty_data":
             response = QueryResponse()
             response.add_element(
-                title=title(""),
-                checkbox=checkbox(False),
-                number=number(None),
-                url=url(None),
-                email=email(None),
-                phone=phone(None),
+                title=title(),
+                checkbox=checkbox(),
+                number=number(),
+                url=url(),
+                email=email(),
+                phone=phone(),
                 formula=formula("0"),
                 relation=relation(),
                 rollup=rollup(),
@@ -601,7 +615,7 @@ class MockDBQuery:
                 created_by=created_by("111"),
                 edited_at=edited_at("2023-05-07T14:08:00.000Z"),
                 edited_by=edited_by("111"),
-                rich_text=rich_text(""),
+                rich_text=rich_text(),
                 select=select(),
                 multi_select=multi_select([]),
                 status=status("Not done"),
