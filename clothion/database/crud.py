@@ -279,6 +279,21 @@ def get_attributes_of_table(db: Session, table_id: int, calculate: str = None, l
             .filter(models.Attribute.is_number)
             .group_by(models.Attribute.name)
         )
+    elif calculate == "count":
+        query = db.query(
+            models.Attribute.element_id,
+            models.Attribute.id,
+            models.Attribute.name,
+            func.count(models.Attribute.value_bool).label("value_bool"),
+            func.count(models.Attribute.value_date).label("value_date"),
+            func.count(models.Attribute.value_number).label("value_number"),
+            func.count(models.Attribute.value_string).label("value_string"),
+            models.Attribute.is_bool,
+            models.Attribute.is_date,
+            models.Attribute.is_number,
+            models.Attribute.is_string,
+            models.Attribute.is_multistring,
+        ).group_by(models.Attribute.name)
     else:
         query = db.query(
             models.Attribute.element_id,
