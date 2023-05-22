@@ -13,6 +13,12 @@ KEY_NAME = {
     "files": "name",
     "multi_select": "name",
 }
+NUMBER_OP = {
+    "sum": func.sum,
+    "min": func.min,
+    "max": func.max,
+    "average": func.avg,
+}
 
 
 def create_tables():
@@ -253,15 +259,16 @@ def get_multistring(db: Session, attribute_id: int):
 
 
 def get_attributes_of_table(db: Session, table_id: int, calculate: str = None, limit: int = 500):
-    if calculate == "sum":
+    if calculate in ["sum", "min", "max", "average"]:
+        fn = NUMBER_OP[calculate]
         query = (
             db.query(
-                models.Attribute.element_id,
+                models.Element.table_id.label("element_id"),
                 models.Attribute.id,
                 models.Attribute.name,
                 models.Attribute.value_bool,
                 models.Attribute.value_date,
-                func.sum(models.Attribute.value_number).label("value_number"),
+                fn(models.Attribute.value_number).label("value_number"),
                 models.Attribute.value_string,
                 models.Attribute.is_bool,
                 models.Attribute.is_date,

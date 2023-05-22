@@ -439,3 +439,36 @@ def test_data_wrong_parameters(client):
 
     response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "wrong"})
     assert response.status_code == 422
+
+
+def test_calculate_data_min(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_number_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "min"})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert {"price": -13, "quantity": 0} in data
+
+
+def test_calculate_data_max(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_number_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "max"})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert {"price": 98, "quantity": 3} in data
+
+
+def test_calculate_data_average(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_number_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "average"})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert {"price": (56.5 + 98 + -13) / 3, "quantity": (3 + 0) / 2} in data
