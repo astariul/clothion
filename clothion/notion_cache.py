@@ -60,7 +60,11 @@ def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) 
         elif attr.is_string:
             value = attr.value_string
         elif attr.is_multistring:
-            value = json.loads(attr.value_string)
+            if isinstance(attr.value_string, str):
+                value = json.loads(attr.value_string)
+            else:
+                # For function like Count, etc...
+                value = attr.value_string
 
         data[attr.element_id][attr.name] = value
 
