@@ -472,3 +472,15 @@ def test_calculate_data_average(client):
 
     assert len(data) == 1
     assert {"price": (56.5 + 98 + -13) / 3, "quantity": (3 + 0) / 2} in data
+
+
+def test_calculate_data_count(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "count"})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    print(data)
+    assert {"my_title": 5, "email": 5, "price": 4, "day_of": 2, "ckbox": 6, "choices": 4} in data
