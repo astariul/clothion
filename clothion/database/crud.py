@@ -280,15 +280,26 @@ def get_attributes_of_table(db: Session, table_id: int, calculate: str = None, l
             .filter(models.Attribute.is_number)
             .group_by(models.Attribute.name)
         )
-    elif calculate == "count":
+    elif calculate in ["count", "count_unique"]:
+        value_bool = models.Attribute.value_bool
+        value_date = models.Attribute.value_date
+        value_number = models.Attribute.value_number
+        value_string = models.Attribute.value_string
+
+        if calculate == "count_unique":
+            value_bool = value_bool.distinct()
+            value_date = value_date.distinct()
+            value_number = value_number.distinct()
+            value_string = value_string.distinct()
+
         query = db.query(
             models.Attribute.element_id,
             models.Attribute.id,
             models.Attribute.name,
-            func.count(models.Attribute.value_bool).label("value_bool"),
-            func.count(models.Attribute.value_date).label("value_date"),
-            func.count(models.Attribute.value_number).label("value_number"),
-            func.count(models.Attribute.value_string).label("value_string"),
+            func.count(value_bool).label("value_bool"),
+            func.count(value_date).label("value_date"),
+            func.count(value_number).label("value_number"),
+            func.count(value_string).label("value_string"),
             models.Attribute.is_bool,
             models.Attribute.is_date,
             models.Attribute.is_number,

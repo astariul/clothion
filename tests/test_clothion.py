@@ -482,5 +482,15 @@ def test_calculate_data_count(client):
     data = response.json()
 
     assert len(data) == 1
-    print(data)
     assert {"my_title": 6, "email": 7, "price": 6, "day_of": 4, "ckbox": 8, "choices": 6} in data
+
+
+def test_calculate_data_unique_count(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "count_unique"})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert {"my_title": 5, "email": 5, "price": 4, "day_of": 2, "ckbox": 2, "choices": 4} in data

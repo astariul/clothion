@@ -21,7 +21,7 @@ class TooMuchAttributes(Exception):
 class Parameters(BaseModel):
     reset_cache: bool = False
     update_cache: bool = True
-    calculate: Literal[None, "sum", "min", "max", "average", "count"] = None
+    calculate: Literal[None, "sum", "min", "max", "average", "count", "count_unique"] = None
 
 
 def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) -> List[Dict]:
