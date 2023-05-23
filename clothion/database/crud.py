@@ -1,8 +1,9 @@
 import json
 import uuid
-from typing import Callable, Dict
+from typing import Callable, Dict, Type, Union
 
 from dateutil.parser import isoparse
+from sqlalchemy import and_, sql
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
@@ -20,6 +21,10 @@ NUMBER_OP = {
     "max": func.max,
     "average": func.avg,
 }
+
+
+class WrongFilter(Exception):
+    pass
 
 
 def create_tables():
@@ -259,7 +264,91 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
     return db_element
 
 
-def get_attributes_of_table(db: Session, table_id: int, calculate: str = None, limit: int = 500):
+def make_condition(
+    prop: models.Base, op: str, value: Union[bool, str, float, int], expected_type: Type
+) -> sql.elements.BinaryExpression:
+    """Function creating the DB condition for a given operator.
+
+    Args:
+        prop (models.Base): The model property to use for the condition.
+        op (str): The condition operation specified by the user.
+        value (Union[bool, str, float, int]): The value specified by the user.
+        expected_type (Type): The type of the property (the value specified by
+            the user should match this type).
+
+    Raises:
+        WrongFilter: Exception thrown when the filter descriptor is not valid.
+
+    Returns:
+        sql.elements.BinaryExpression: DB condition that can be used to create
+            a bigger filter together with other operations.
+    """
+    if op == "is":
+        if not isinstance(value, expected_type):
+            raise WrongFilter(
+                f"Filter condition `{op}` expected a value of type {expected_type} (but got {type(value)})"
+            )
+        return prop == value
+    else:
+        raise WrongFilter(f"Unknown filter condition ({op})")
+
+
+def create_db_filter(db: Session, table_id: int, filter: Dict[str, Dict] = None) -> sql.selectable.Exists:
+    """Take a filter descriptor (the thing sent by the user in his request) and
+    turn it into a DB filter that can be used in the query to properly filter
+    the elements to return.
+
+    Args:
+        db (Session): DB Session to use for calling the DB.
+        table_id (int): ID of the Table from which to extract the data.
+        filter (Dict[str, Dict], optional): Filter descriptor sent by the user.
+            Defaults to None.
+
+    Raises:
+        WrongFilter: Exception thrown when the filter descriptor is not valid.
+
+    Returns:
+        sql.selectable.Exists: DB filter that can be applied with `filter`
+            method in `sqlalchemy`.
+    """
+    # No filter
+    if filter is None:
+        return None
+
+    # We will gather the filters here
+    db_conditions = []
+
+    # First, we need the schema for validating the filter
+    db_attributes = {attr.name: attr for attr in last_table_element(db, table_id).attributes}
+
+    # Filter are applied on each attribute
+    for attr_name, attr_filter in filter.items():
+        if attr_name not in db_attributes:
+            raise WrongFilter(f"Unknown attribute ({attr_name})")
+
+        # Always the first condition is to get the right attribute (identified by its name)
+        db_attr_conditions = [models.Attribute.name == attr_name]
+
+        # Then, add all conditions defined in the query
+        if db_attributes[attr_name].is_bool:
+            for op, value in attr_filter.items():
+                db_attr_conditions.append(make_condition(models.Attribute.value_bool, op, value, bool))
+        else:
+            raise WrongFilter("Unsupported for now")
+
+        # Gather the conditions for this attribute
+        db_conditions.append(and_(*db_attr_conditions))
+
+    # Gather the conditions across attributes
+    db_condition = and_(*db_conditions)
+
+    # Use `any`, to ensure at least one attribute in the element meets the condition
+    return models.Element.attributes.any(db_condition)
+
+
+def get_attributes_of_table(
+    db: Session, table_id: int, calculate: str = None, filter: Dict[str, Dict] = None, limit: int = 500
+):
     if calculate in ["sum", "min", "max", "average"]:
         fn = NUMBER_OP[calculate]
         query = (
@@ -322,8 +411,12 @@ def get_attributes_of_table(db: Session, table_id: int, calculate: str = None, l
             models.Attribute.is_multistring,
         )
 
-    # Get only the attributes for the elements of the given table
-    query = query.join(models.Element).filter(models.Element.table_id == table_id)
+    # Create optional filters
+    db_filter = create_db_filter(db, table_id, filter)
+    filter_args = [db_filter] if db_filter is not None else []
+
+    # Get only the attributes for the right elements
+    query = query.join(models.Element).filter(models.Element.table_id == table_id, *filter_args)
 
     # Limit the size of the query and return the results
     return query.limit(limit).all()

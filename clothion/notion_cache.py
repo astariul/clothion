@@ -22,6 +22,7 @@ class Parameters(BaseModel):
     reset_cache: bool = False
     update_cache: bool = True
     calculate: Literal[None, "sum", "min", "max", "average", "count", "count_unique"] = None
+    filter: Dict[str, Dict] = None
 
 
 def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) -> List[Dict]:
@@ -42,7 +43,7 @@ def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) 
         List[Dict]: JSON data corresponding to this table.
     """
     db_attributes = crud.get_attributes_of_table(
-        db, db_table_id, calculate=parameters.calculate, limit=MAX_ATTRIBUTES + 1
+        db, db_table_id, calculate=parameters.calculate, filter=parameters.filter, limit=MAX_ATTRIBUTES + 1
     )
 
     # If there is too much data, raise an exception so the server can properly inform the client

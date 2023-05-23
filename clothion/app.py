@@ -134,6 +134,11 @@ def data(
             detail=f"Your data contains more than {notion_cache.MAX_ATTRIBUTES} attributes. Clothion has a limit on "
             "the amount of data it can answer with, please use filters to retrieve only the data you need.",
         )
+    except crud.WrongFilter as e:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Error with the `filter` argument : {str(e)}",
+        )
 
 
 @table_router.get("/schema", tags=["API"])
