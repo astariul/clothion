@@ -496,6 +496,14 @@ def test_calculate_data_unique_count(client):
     assert {"my_title": 5, "email": 5, "price": 4, "day_of": 2, "ckbox": 2, "choices": 4} in data
 
 
+def test_filter_data_wrong_attribute_name(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get values that are True
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"check-box": {"is": True}}})
+    assert response.status_code == 422
+
+
 def test_filter_data_boolean_is_basic(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
