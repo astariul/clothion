@@ -336,6 +336,9 @@ def create_db_filter(db: Session, table_id: int, filter: Dict[str, Dict] = None)
         elif db_attributes[attr_name].is_number:
             for op, value in attr_filter.items():
                 db_attr_conditions.append(make_condition(models.Attribute.value_number, op, value, (int, float)))
+        elif db_attributes[attr_name].is_string:
+            for op, value in attr_filter.items():
+                db_attr_conditions.append(make_condition(models.Attribute.value_string, op, value, (str,)))
         else:
             raise WrongFilter("Unsupported for now")
 
