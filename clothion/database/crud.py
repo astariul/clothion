@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Callable, Dict, Type, Union
+from typing import Callable, Dict, Tuple, Type, Union
 
 from dateutil.parser import isoparse
 from sqlalchemy import and_, sql
@@ -265,7 +265,7 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
 
 
 def make_condition(
-    prop: models.Base, op: str, value: Union[bool, str, float, int], expected_type: Type
+    prop: models.Base, op: str, value: Union[bool, str, float, int], expected_types: Tuple[Type]
 ) -> sql.elements.BinaryExpression:
     """Function creating the DB condition for a given operator.
 
@@ -273,8 +273,8 @@ def make_condition(
         prop (models.Base): The model property to use for the condition.
         op (str): The condition operation specified by the user.
         value (Union[bool, str, float, int]): The value specified by the user.
-        expected_type (Type): The type of the property (the value specified by
-            the user should match this type).
+        expected_types (Tuple[Type]): The type(s) of the property (the value
+            specified by the user should match this type).
 
     Raises:
         WrongFilter: Exception thrown when the filter descriptor is not valid.
@@ -284,9 +284,9 @@ def make_condition(
             a bigger filter together with other operations.
     """
     if op == "is":
-        if not isinstance(value, expected_type):
+        if type(value) not in expected_types:
             raise WrongFilter(
-                f"Filter condition `{op}` expected a value of type {expected_type} (but got {type(value)})"
+                f"Filter condition `{op}` expected a value of type {expected_types} (but got {type(value)})"
             )
         return prop == value
     else:
@@ -332,7 +332,10 @@ def create_db_filter(db: Session, table_id: int, filter: Dict[str, Dict] = None)
         # Then, add all conditions defined in the query
         if db_attributes[attr_name].is_bool:
             for op, value in attr_filter.items():
-                db_attr_conditions.append(make_condition(models.Attribute.value_bool, op, value, bool))
+                db_attr_conditions.append(make_condition(models.Attribute.value_bool, op, value, (bool,)))
+        elif db_attributes[attr_name].is_number:
+            for op, value in attr_filter.items():
+                db_attr_conditions.append(make_condition(models.Attribute.value_number, op, value, (int, float)))
         else:
             raise WrongFilter("Unsupported for now")
 

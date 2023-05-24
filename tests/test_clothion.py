@@ -539,3 +539,37 @@ def test_filter_data_boolean_is_wrong_type(client, value):
     # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {"is": value}}})
     assert response.status_code == 422
+
+
+def test_filter_data_number_is_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get int values
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"is": 56.6}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert all(x["price"] == 56.6 for x in data)
+
+    # Get float values
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"is": 699}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    assert all(x["price"] == 699 for x in data)
+
+    # Get values that doesn't exist
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"is": -89}}})
+    assert response.status_code == 200
+    assert len(response.json()) == 0
+
+
+@pytest.mark.parametrize("value", [True, "str"])
+def test_filter_data_number_is_wrong_type(client, value):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get values that are True
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"is": value}}})
+    assert response.status_code == 422
