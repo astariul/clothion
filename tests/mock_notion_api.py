@@ -507,6 +507,18 @@ N_CALLS = Counter()
 class MockDBQuery:
     def query(self, database_id: str, **kwargs):  # noqa: C901
         N_CALLS[database_id] += 1
+
+        # Only specific `database_id` can return more results on the second call
+        # By default, the first call retrieve all the data and other calls are
+        # empty (because already cached in the DB)
+        if N_CALLS[database_id] > 1 and database_id not in [
+            "table_filter_call_new_data",
+            "table_filter_call_updated_data",
+            "table_filter_call_crash_normal_call_updates",
+            "table_filter_call_crash_normal_call_updates_2",
+        ]:
+            return QueryResponse().get()
+
         if database_id == "table_with_basic_data":
             response = QueryResponse()
             response.add_element(my_title=title("Element 1"), price=number(56))
@@ -517,14 +529,20 @@ class MockDBQuery:
         elif database_id == "table_filter_call_no_data":
             if "filter" not in kwargs:
                 # First call
-                return self.query("table_with_basic_data")
+                response = QueryResponse()
+                response.add_element(my_title=title("Element 1"), price=number(56))
+                response.add_element(my_title=title("Element 2"), price=number(98))
+                return response.get()
             else:
-                # Second call
-                return QueryResponse().get()
+                # Can't be here (first call with filter in kwargs)
+                raise RuntimeError
         elif database_id == "table_filter_call_new_data":
             if "filter" not in kwargs:
                 # First call
-                return self.query("table_with_basic_data")
+                response = QueryResponse()
+                response.add_element(my_title=title("Element 1"), price=number(56))
+                response.add_element(my_title=title("Element 2"), price=number(98))
+                return response.get()
             else:
                 # Second call
                 response = QueryResponse()
@@ -638,71 +656,70 @@ class MockDBQuery:
             return response.get()
         elif database_id == "table_for_general_data":
             response = QueryResponse()
-            if N_CALLS[database_id] == 1:
-                response.add_element(
-                    my_title=title("Elem1"),
-                    email=email("me1@lol.com"),
-                    price=number(56.5),
-                    day_of=date("2023-05-08T10:00:00.000+09:00"),
-                    ckbox=checkbox(False),
-                    choices=multi_select(["Opt1", "Opt2"]),
-                )
-                response.add_element(
-                    my_title=title("Elem2"),
-                    email=email(),
-                    price=number(),
-                    day_of=date("2026-05-08T10:00:00.000+09:00"),
-                    ckbox=checkbox(True),
-                    choices=multi_select([]),
-                )
-                response.add_element(
-                    my_title=title("Elem3"),
-                    email=email("me3@lol.com"),
-                    price=number(-5),
-                    day_of=date(),
-                    ckbox=checkbox(True),
-                    choices=multi_select([]),
-                )
-                response.add_element(
-                    my_title=title("Elem4"),
-                    email=email("me4@lol.com"),
-                    price=number(699),
-                    day_of=date(),
-                    ckbox=checkbox(),
-                    choices=multi_select(["Opt1"]),
-                )
-                response.add_element(
-                    my_title=title(),
-                    email=email("me5@lol.com"),
-                    price=number(),
-                    day_of=date(),
-                    ckbox=checkbox(),
-                    choices=multi_select(["Opt3"]),
-                )
-                response.add_element(
-                    my_title=title("Elem6"),
-                    email=email("me6@lol.com"),
-                    price=number(56.6),
-                    day_of=date(),
-                    ckbox=checkbox(False),
-                    choices=multi_select(["Opt2", "Opt1"]),
-                )
-                response.add_element(
-                    my_title=title("Elem4"),
-                    email=email("me5@lol.com"),
-                    price=number(56.5),
-                    day_of=date("2023-05-08T10:00:00.000+09:00"),
-                    ckbox=checkbox(False),
-                    choices=multi_select(["Opt1", "Opt2"]),
-                )
-                response.add_element(
-                    my_title=title(),
-                    email=email("me5@lol.com"),
-                    price=number(699),
-                    day_of=date("2023-05-08T10:00:00.000+09:00"),
-                    ckbox=checkbox(False),
-                    choices=multi_select(["Opt1"]),
-                )
+            response.add_element(
+                my_title=title("Elem1"),
+                email=email("me1@lol.com"),
+                price=number(56.5),
+                day_of=date("2023-05-08T10:00:00.000+09:00"),
+                ckbox=checkbox(False),
+                choices=multi_select(["Opt1", "Opt2"]),
+            )
+            response.add_element(
+                my_title=title("Elem2"),
+                email=email(),
+                price=number(),
+                day_of=date("2026-05-08T10:00:00.000+09:00"),
+                ckbox=checkbox(True),
+                choices=multi_select([]),
+            )
+            response.add_element(
+                my_title=title("Elem3"),
+                email=email("me3@lol.com"),
+                price=number(-5),
+                day_of=date(),
+                ckbox=checkbox(True),
+                choices=multi_select([]),
+            )
+            response.add_element(
+                my_title=title("Elem4"),
+                email=email("me4@lol.com"),
+                price=number(699),
+                day_of=date(),
+                ckbox=checkbox(),
+                choices=multi_select(["Opt1"]),
+            )
+            response.add_element(
+                my_title=title(),
+                email=email("me5@lol.com"),
+                price=number(),
+                day_of=date(),
+                ckbox=checkbox(),
+                choices=multi_select(["Opt3"]),
+            )
+            response.add_element(
+                my_title=title("Elem6"),
+                email=email("me6@lol.com"),
+                price=number(56.6),
+                day_of=date(),
+                ckbox=checkbox(False),
+                choices=multi_select(["Opt2", "Opt1"]),
+            )
+            response.add_element(
+                my_title=title("Elem4"),
+                email=email("me5@lol.com"),
+                price=number(56.5),
+                day_of=date("2023-05-08T10:00:00.000+09:00"),
+                ckbox=checkbox(False),
+                choices=multi_select(["Opt1", "Opt2"]),
+            )
+            response.add_element(
+                my_title=title(),
+                email=email("me5@lol.com"),
+                price=number(699),
+                day_of=date("2023-05-08T10:00:00.000+09:00"),
+                ckbox=checkbox(False),
+                choices=multi_select(["Opt1"]),
+            )
             return response.get()
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
