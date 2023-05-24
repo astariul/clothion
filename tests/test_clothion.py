@@ -504,6 +504,14 @@ def test_filter_data_wrong_attribute_name(client):
     assert response.status_code == 422
 
 
+def test_filter_data_wrong_filter_name(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get values that are True
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {"wrong_is": True}}})
+    assert response.status_code == 422
+
+
 def test_filter_data_boolean_is_basic(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
@@ -522,3 +530,12 @@ def test_filter_data_boolean_is_basic(client):
 
     assert len(data) == 6
     assert all(x["ckbox"] is False for x in data)
+
+
+@pytest.mark.parametrize("value", [47, "str"])
+def test_filter_data_boolean_is_wrong_type(client, value):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get values that are True
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {"is": value}}})
+    assert response.status_code == 422
