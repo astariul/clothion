@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Callable, Dict, Tuple, Type, Union
+from typing import Callable, Dict, Union
 
 from dateutil.parser import isoparse
 from sqlalchemy import and_, sql
@@ -21,6 +21,10 @@ NUMBER_OP = {
     "max": func.max,
     "average": func.avg,
 }
+BOOL = "boolean"
+DATE = "date"
+NUMBER = "number"
+STRING = "string"
 
 
 class WrongFilter(Exception):
@@ -265,7 +269,7 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
 
 
 def make_condition(
-    prop: models.Base, op: str, value: Union[bool, str, float, int], expected_types: Tuple[Type]
+    prop: models.Base, op: str, value: Union[bool, str, float, int], prop_type: str
 ) -> sql.elements.BinaryExpression:
     """Function creating the DB condition for a given operator.
 
@@ -273,8 +277,8 @@ def make_condition(
         prop (models.Base): The model property to use for the condition.
         op (str): The condition operation specified by the user.
         value (Union[bool, str, float, int]): The value specified by the user.
-        expected_types (Tuple[Type]): The type(s) of the property (the value
-            specified by the user should match this type).
+        prop_type (str): The type of the property (the value specified by the
+            user should match this type).
 
     Raises:
         WrongFilter: Exception thrown when the filter descriptor is not valid.
@@ -283,6 +287,14 @@ def make_condition(
         sql.elements.BinaryExpression: DB condition that can be used to create
             a bigger filter together with other operations.
     """
+    # Assign the expected type dependending on the property's type
+    if prop_type == BOOL:
+        expected_types = (bool,)
+    elif prop_type == NUMBER:
+        expected_types = (int, float)
+    elif prop_type == STRING:
+        expected_types = (str,)
+
     if op == "is":
         if type(value) not in expected_types:
             raise WrongFilter(
@@ -332,13 +344,13 @@ def create_db_filter(db: Session, table_id: int, filter: Dict[str, Dict] = None)
         # Then, add all conditions defined in the query
         if db_attributes[attr_name].is_bool:
             for op, value in attr_filter.items():
-                db_attr_conditions.append(make_condition(models.Attribute.value_bool, op, value, (bool,)))
+                db_attr_conditions.append(make_condition(models.Attribute.value_bool, op, value, BOOL))
         elif db_attributes[attr_name].is_number:
             for op, value in attr_filter.items():
-                db_attr_conditions.append(make_condition(models.Attribute.value_number, op, value, (int, float)))
+                db_attr_conditions.append(make_condition(models.Attribute.value_number, op, value, NUMBER))
         elif db_attributes[attr_name].is_string:
             for op, value in attr_filter.items():
-                db_attr_conditions.append(make_condition(models.Attribute.value_string, op, value, (str,)))
+                db_attr_conditions.append(make_condition(models.Attribute.value_string, op, value, STRING))
         else:
             raise WrongFilter("Unsupported for now")
 
