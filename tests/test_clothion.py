@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from . import mock_notion_api  # noqa: F401 (just importing it will monkey-patch the notion API !)
-from .utils import create_table
+from .utils import create_table, no_timezone_date
 
 
 # Before importing clothion, set some options specifically for testing
@@ -291,15 +291,15 @@ def test_access_data_full_data_range(client):
     assert data[0]["formula"] == "256"
     assert "relation" not in data[0]
     assert "rollup" not in data[0]
-    assert data[0]["created_at"] == "2023-05-07T14:02:00"
+    assert data[0]["created_at"] == no_timezone_date("2023-05-07T14:02:00.000Z")
     assert data[0]["created_by"] == "111"
-    assert data[0]["edited_at"] == "2023-05-07T14:08:00"
+    assert data[0]["edited_at"] == no_timezone_date("2023-05-07T14:08:00.000Z")
     assert data[0]["edited_by"] == "111"
     assert data[0]["rich_text"] == "Such a bore"
     assert data[0]["select"] == "Option 1"
     assert data[0]["multi_select"] == ["Opt1", "Opt2"]
     assert data[0]["status"] == "Not done"
-    assert data[0]["date"] == "2023-05-08T10:00:00"
+    assert data[0]["date"] == no_timezone_date("2023-05-08T10:00:00.000+09:00")
     assert data[0]["people"] == ["111"]
     assert data[0]["files"] == ["img.png"]
 
@@ -612,7 +612,7 @@ def test_filter_data_date_is_basic(client):
     data = response.json()
 
     assert len(data) == 3
-    assert all(x["day_of"] == "2023-05-08T10:00:00" for x in data)
+    assert all(x["day_of"] == no_timezone_date("2023-05-08T10:00:00.000+09:00") for x in data)
 
     # Get values that doesn't exist
     response = client.post(

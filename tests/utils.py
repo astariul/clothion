@@ -1,5 +1,7 @@
+from datetime import timezone
 from typing import Tuple
 
+from dateutil.parser import isoparse
 from fastapi.testclient import TestClient
 
 
@@ -20,3 +22,16 @@ def create_table(client: TestClient, token: str, table_id: str) -> Tuple[str, st
     assert response.status_code == 200
     integration_id, table_id = response.url.path.strip("/").split("/")
     return (integration_id, table_id)
+
+
+def no_timezone_date(date: str) -> str:
+    """Remove the timezone component (converting to UTC before) of an ISO-8601
+    datetime string, and return an ISO-8601 datetime string.
+
+    Args:
+        date (str): ISO-8601 datetime string with timezone.
+
+    Returns:
+        str: UTC-converted ISO-8601 datetime string without timezone.
+    """
+    return isoparse(date).astimezone(timezone.utc).replace(tzinfo=None).isoformat()

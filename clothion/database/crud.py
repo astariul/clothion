@@ -1,6 +1,6 @@
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable, Dict, Union
 
 from dateutil.parser import isoparse
@@ -192,7 +192,7 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
         kwargs["is_string"] = True
     elif attr["type"] == "date":
         if attr["date"]:
-            kwargs["value_date"] = isoparse(attr["date"]["start"])
+            kwargs["value_date"] = isoparse(attr["date"]["start"]).astimezone(timezone.utc)
         kwargs["is_date"] = True
     elif attr["type"] == "url":
         if attr["url"]:
@@ -213,13 +213,13 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
         # Types that can't be handled by our DB
         return None
     elif attr["type"] == "created_time":
-        kwargs["value_date"] = isoparse(attr["created_time"])
+        kwargs["value_date"] = isoparse(attr["created_time"]).astimezone(timezone.utc)
         kwargs["is_date"] = True
     elif attr["type"] == "created_by":
         kwargs["value_string"] = attr["created_by"]["id"]
         kwargs["is_string"] = True
     elif attr["type"] == "last_edited_time":
-        kwargs["value_date"] = isoparse(attr["last_edited_time"])
+        kwargs["value_date"] = isoparse(attr["last_edited_time"]).astimezone(timezone.utc)
         kwargs["is_date"] = True
     elif attr["type"] == "last_edited_by":
         kwargs["value_string"] = attr["last_edited_by"]["id"]
@@ -240,7 +240,9 @@ def create_attribute(db: Session, name: str, attr: Dict, element_id: int):
 
 def create_element(db: Session, notion_id: str, table_id: int, last_edited: str, attributes: Dict):
     # First, create the element
-    db_element = models.Element(table_id=table_id, notion_id=notion_id, last_edited=isoparse(last_edited))
+    db_element = models.Element(
+        table_id=table_id, notion_id=notion_id, last_edited=isoparse(last_edited).astimezone(timezone.utc)
+    )
     db.add(db_element)
     db.commit()
     db.refresh(db_element)
@@ -255,7 +257,7 @@ def create_element(db: Session, notion_id: str, table_id: int, last_edited: str,
 
 def update_element(db: Session, db_element: models.Element, last_edited: str, attributes: Dict):
     # Update the element itself
-    db_element.last_edited = isoparse(last_edited)
+    db_element.last_edited = isoparse(last_edited).astimezone(timezone.utc)
     db.commit()
 
     # Delete all of its previous attribute
@@ -300,7 +302,7 @@ def make_condition(
         try:
             if not isinstance(value, str):
                 raise ValueError
-            value = isoparse(value)
+            value = isoparse(value).astimezone(timezone.utc)
         except ValueError:
             raise WrongFilter(f"Given value for date ({value}) is not a valid date)")
 
