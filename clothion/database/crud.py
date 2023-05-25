@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import datetime
 from typing import Callable, Dict, Union
 
 from dateutil.parser import isoparse
@@ -294,6 +295,14 @@ def make_condition(
         expected_types = (int, float)
     elif prop_type == STRING:
         expected_types = (str,)
+    elif prop_type == DATE:
+        expected_types = (datetime,)
+        try:
+            if not isinstance(value, str):
+                raise ValueError
+            value = isoparse(value)
+        except ValueError:
+            raise WrongFilter(f"Given value for date ({value}) is not a valid date)")
 
     if op == "is":
         if type(value) not in expected_types:
@@ -305,7 +314,9 @@ def make_condition(
         raise WrongFilter(f"Unknown filter condition ({op})")
 
 
-def create_db_filter(db: Session, table_id: int, filter: Dict[str, Dict] = None) -> sql.selectable.Exists:
+def create_db_filter(  # noqa: C901
+    db: Session, table_id: int, filter: Dict[str, Dict] = None
+) -> sql.selectable.Exists:
     """Take a filter descriptor (the thing sent by the user in his request) and
     turn it into a DB filter that can be used in the query to properly filter
     the elements to return.
@@ -351,6 +362,9 @@ def create_db_filter(db: Session, table_id: int, filter: Dict[str, Dict] = None)
         elif db_attributes[attr_name].is_string:
             for op, value in attr_filter.items():
                 db_attr_conditions.append(make_condition(models.Attribute.value_string, op, value, STRING))
+        elif db_attributes[attr_name].is_date:
+            for op, value in attr_filter.items():
+                db_attr_conditions.append(make_condition(models.Attribute.value_date, op, value, DATE))
         else:
             raise WrongFilter("Unsupported for now")
 

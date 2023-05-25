@@ -599,3 +599,33 @@ def test_filter_data_string_is_wrong_type(client, value):
     # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"my_title": {"is": value}}})
     assert response.status_code == 422
+
+
+def test_filter_data_date_is_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get value
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"is": "2023-05-08T10:00:00.000+09:00"}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 3
+    assert all(x["day_of"] == "2023-05-08T10:00:00" for x in data)
+
+    # Get values that doesn't exist
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"is": "1999-05-08T10:00:00.000+09:00"}}}
+    )
+    assert response.status_code == 200
+    assert len(response.json()) == 0
+
+
+@pytest.mark.parametrize("value", [True, 65, "not_a_date"])
+def test_filter_data_date_is_wrong_type(client, value):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get values that are True
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"is": value}}})
+    assert response.status_code == 422
