@@ -26,6 +26,7 @@ BOOL = "boolean"
 DATE = "date"
 NUMBER = "number"
 STRING = "string"
+MULTISTRING = "multistring"
 
 
 class WrongFilter(Exception):
@@ -271,7 +272,7 @@ def update_element(db: Session, db_element: models.Element, last_edited: str, at
     return db_element
 
 
-def make_condition(
+def make_condition(  # noqa: C901
     prop: models.Base, op: str, value: Union[bool, str, float, int], prop_type: str
 ) -> sql.elements.BinaryExpression:
     """Function creating the DB condition for a given operator.
@@ -305,8 +306,12 @@ def make_condition(
             value = isoparse(value).astimezone(timezone.utc)
         except ValueError:
             raise WrongFilter(f"Given value for date ({value}) is not a valid date)")
+    elif prop_type == MULTISTRING:
+        expected_types = (str,)
 
     if op == "is":
+        if prop_type == MULTISTRING:
+            raise WrongFilter("Multi-string attribute can't use `is` filters. Use `contains` instead")
         if type(value) not in expected_types:
             raise WrongFilter(
                 f"Filter condition `{op}` expected a value of type {expected_types} (but got {type(value)})"
@@ -367,8 +372,9 @@ def create_db_filter(  # noqa: C901
         elif db_attributes[attr_name].is_date:
             for op, value in attr_filter.items():
                 db_attr_conditions.append(make_condition(models.Attribute.value_date, op, value, DATE))
-        else:
-            raise WrongFilter("Unsupported for now")
+        elif db_attributes[attr_name].is_multistring:
+            for op, value in attr_filter.items():
+                db_attr_conditions.append(make_condition(models.Attribute.value_string, op, value, MULTISTRING))
 
         # Gather the conditions for this attribute
         db_conditions.append(and_(*db_attr_conditions))

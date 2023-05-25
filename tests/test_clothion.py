@@ -629,3 +629,11 @@ def test_filter_data_date_is_wrong_type(client, value):
     # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"is": value}}})
     assert response.status_code == 422
+
+
+def test_filter_data_multistring_is_cant_use(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get values that are True
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"choices": {"is": "Opt1"}}})
+    assert response.status_code == 422
