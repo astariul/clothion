@@ -309,14 +309,22 @@ def make_condition(  # noqa: C901
     elif prop_type == MULTISTRING:
         expected_types = (str,)
 
-    if op == "is":
+    if op == "is" or op == "is_not":
+        # Parameters / types validation
         if prop_type == MULTISTRING:
-            raise WrongFilter("Multi-string attribute can't use `is` filters. Use `contains` instead")
+            raise WrongFilter(
+                f"Multi-string attribute can't use `{op}` filters. Use `contains`/`does_not_contain` instead"
+            )
         if type(value) not in expected_types:
             raise WrongFilter(
                 f"Filter condition `{op}` expected a value of type {expected_types} (but got {type(value)})"
             )
-        return prop == value
+
+        # Actual comparison
+        if op == "is":
+            return prop == value
+        elif op == "is_not":
+            return prop != value
     else:
         raise WrongFilter(f"Unknown filter condition ({op})")
 

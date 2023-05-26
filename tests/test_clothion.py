@@ -533,11 +533,12 @@ def test_filter_data_boolean_is_basic(client):
 
 
 @pytest.mark.parametrize("value", [47, "str"])
-def test_filter_data_boolean_is_wrong_type(client, value):
+@pytest.mark.parametrize("op", ["is", "is_not"])
+def test_filter_data_boolean_is_is_not_wrong_type(client, value, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
     # Get values that are True
-    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {"is": value}}})
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {op: value}}})
     assert response.status_code == 422
 
 
@@ -567,11 +568,12 @@ def test_filter_data_number_is_basic(client):
 
 
 @pytest.mark.parametrize("value", [True, "str"])
-def test_filter_data_number_is_wrong_type(client, value):
+@pytest.mark.parametrize("op", ["is", "is_not"])
+def test_filter_data_number_is_is_not_wrong_type(client, value, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
     # Get values that are True
-    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"is": value}}})
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {op: value}}})
     assert response.status_code == 422
 
 
@@ -593,11 +595,12 @@ def test_filter_data_string_is_basic(client):
 
 
 @pytest.mark.parametrize("value", [True, 65])
-def test_filter_data_string_is_wrong_type(client, value):
+@pytest.mark.parametrize("op", ["is", "is_not"])
+def test_filter_data_string_is_wrong_type(client, value, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
     # Get values that are True
-    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"my_title": {"is": value}}})
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"my_title": {op: value}}})
     assert response.status_code == 422
 
 
@@ -623,17 +626,113 @@ def test_filter_data_date_is_basic(client):
 
 
 @pytest.mark.parametrize("value", [True, 65, "not_a_date"])
-def test_filter_data_date_is_wrong_type(client, value):
+@pytest.mark.parametrize("op", ["is", "is_not"])
+def test_filter_data_date_is_wrong_type(client, value, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
     # Get values that are True
-    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"is": value}}})
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {op: value}}})
     assert response.status_code == 422
 
 
-def test_filter_data_multistring_is_cant_use(client):
+@pytest.mark.parametrize("op", ["is", "is_not"])
+def test_filter_data_multistring_cant_use_is_is_not(client, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
     # Get values that are True
-    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"choices": {"is": "Opt1"}}})
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"choices": {op: "Opt1"}}})
     assert response.status_code == 422
+
+
+def test_filter_data_boolean_is_not_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get values that are not True
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {"is_not": True}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 6
+    assert all(x["ckbox"] is False for x in data)
+
+    # Get values that are not False
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {"is_not": False}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    assert all(x["ckbox"] is True for x in data)
+
+
+def test_filter_data_number_is_not_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get int values
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"is_not": 56.6}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 5
+    assert all(x["price"] != 56.6 for x in data)
+
+    # Get float values
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"is_not": 699}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 4
+    assert all(x["price"] != 699 for x in data)
+
+    # Get values that doesn't exist
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"is_not": -89}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 6
+    assert all(x["price"] != -89 for x in data)
+
+
+def test_filter_data_string_is_not_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get value
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"email": {"is_not": "me5@lol.com"}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 4
+    assert all(x["email"] != "me5@lol.com" for x in data)
+
+    # Get values that doesn't exist
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"my_title": {"is_not": "me5@lol.com"}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 6
+    assert all(x["my_title"] != "me5@lol.com" for x in data)
+
+
+def test_filter_data_date_is_not_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get value
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"is_not": "2023-05-08T10:00:00.000+09:00"}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert all(x["day_of"] != no_timezone_date("2023-05-08T10:00:00.000+09:00") for x in data)
+
+    # Get values that doesn't exist
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"is_not": "1999-05-08T10:00:00.000+09:00"}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 4
+    assert all(x["day_of"] != no_timezone_date("1999-05-08T10:00:00.000+09:00") for x in data)
