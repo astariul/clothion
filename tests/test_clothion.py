@@ -304,15 +304,15 @@ def test_access_data_full_data_range(client):
     assert data[0]["formula"] == "256"
     assert "relation" not in data[0]
     assert "rollup" not in data[0]
-    assert data[0]["created_at"] == no_timezone_date("2023-05-07T14:02:00.000Z")
+    assert data[0]["created_at"] == no_timezone_date("2023-05-07T14:02:00.000Z", as_str=True)
     assert data[0]["created_by"] == "111"
-    assert data[0]["edited_at"] == no_timezone_date("2023-05-07T14:08:00.000Z")
+    assert data[0]["edited_at"] == no_timezone_date("2023-05-07T14:08:00.000Z", as_str=True)
     assert data[0]["edited_by"] == "111"
     assert data[0]["rich_text"] == "Such a bore"
     assert data[0]["select"] == "Option 1"
     assert data[0]["multi_select"] == ["Opt1", "Opt2"]
     assert data[0]["status"] == "Not done"
-    assert data[0]["date"] == no_timezone_date("2023-05-08T10:00:00.000+09:00")
+    assert data[0]["date"] == no_timezone_date("2023-05-08T10:00:00.000+09:00", as_str=True)
     assert data[0]["people"] == ["111"]
     assert data[0]["files"] == ["img.png"]
 
@@ -625,7 +625,7 @@ def test_filter_data_date_is_basic(client):
     data = response.json()
 
     assert len(data) == 3
-    assert all(x["day_of"] == no_timezone_date("2023-05-08T10:00:00.000+09:00") for x in data)
+    assert all(x["day_of"] == no_timezone_date("2023-05-08T10:00:00.000+09:00", as_str=True) for x in data)
 
     # Get values that doesn't exist
     response = client.post(
@@ -733,7 +733,7 @@ def test_filter_data_date_is_not_basic(client):
     data = response.json()
 
     assert len(data) == 1
-    assert all(x["day_of"] != no_timezone_date("2023-05-08T10:00:00.000+09:00") for x in data)
+    assert all(x["day_of"] != no_timezone_date("2023-05-08T10:00:00.000+09:00", as_str=True) for x in data)
 
     # Get values that doesn't exist
     response = client.post(
@@ -743,7 +743,7 @@ def test_filter_data_date_is_not_basic(client):
     data = response.json()
 
     assert len(data) == 4
-    assert all(x["day_of"] != no_timezone_date("1999-05-08T10:00:00.000+09:00") for x in data)
+    assert all(x["day_of"] != no_timezone_date("1999-05-08T10:00:00.000+09:00", as_str=True) for x in data)
 
 
 def test_filter_data_boolean_cant_use_is_empty(client):
@@ -783,4 +783,28 @@ def test_filter_data_is_empty_wrong_value_type(client, value):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"is_empty": value}}})
+    assert response.status_code == 422
+
+
+def test_filter_data_date_after_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # The results shouldn't include the date itself (because it's AFTER X)
+    date = "2023-05-08T10:00:00.000+09:00"
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"after": date}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert all(no_timezone_date(x["day_of"]) > no_timezone_date(date) for x in data)
+
+
+@pytest.mark.parametrize("attr", ["price", "my_title", "choices", "ckbox"])
+def test_filter_data_date_op_wrong_attribute(client, attr):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get empty values
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {attr: {"after": "2023-05-08T10:00:00.000+09:00"}}}
+    )
     assert response.status_code == 422
