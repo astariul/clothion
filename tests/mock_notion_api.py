@@ -644,7 +644,7 @@ class MockDBQuery:
             return response.get()
         elif database_id == "table_too_much":
             response = QueryResponse()
-            for i in range(300):
+            for i in range(8):
                 response.add_element(my_title=title(f"Element {i}"), price=number(i * 2 + 4))
             return response.get()
         elif database_id == "table_for_number_data":

@@ -23,6 +23,19 @@ def client():
     yield TestClient(clothion.app)
 
 
+@pytest.fixture
+def temporary_reduce_max_attributes():
+    # Monkey-patch MAX_ATTRIBUTES to something smaller, for tests going over
+    # this limit, without making the tests slower
+    old_max_attributes = clothion.notion_cache.MAX_ATTRIBUTES
+    clothion.notion_cache.MAX_ATTRIBUTES = 10
+
+    yield None
+
+    # Monkey-patch back to normal value after the test
+    clothion.notion_cache.MAX_ATTRIBUTES = old_max_attributes
+
+
 def test_package_has_version():
     assert len(clothion.__version__) > 0
 
@@ -334,7 +347,7 @@ def test_access_data_empty_data_range(client):
     assert data[0]["files"] is None
 
 
-def test_access_too_much_data(client):
+def test_access_too_much_data(client, temporary_reduce_max_attributes):
     integration_id, table_id = create_table(client, "secret_token", "table_too_much")
 
     response = client.post(f"/{integration_id}/{table_id}/data", json={})
