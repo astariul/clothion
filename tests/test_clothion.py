@@ -537,7 +537,6 @@ def test_filter_data_boolean_is_basic(client):
 def test_filter_data_boolean_is_is_not_wrong_type(client, value, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
-    # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {op: value}}})
     assert response.status_code == 422
 
@@ -572,7 +571,6 @@ def test_filter_data_number_is_basic(client):
 def test_filter_data_number_is_is_not_wrong_type(client, value, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
-    # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {op: value}}})
     assert response.status_code == 422
 
@@ -599,7 +597,6 @@ def test_filter_data_string_is_basic(client):
 def test_filter_data_string_is_wrong_type(client, value, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
-    # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"my_title": {op: value}}})
     assert response.status_code == 422
 
@@ -630,7 +627,6 @@ def test_filter_data_date_is_basic(client):
 def test_filter_data_date_is_wrong_type(client, value, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
-    # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {op: value}}})
     assert response.status_code == 422
 
@@ -639,7 +635,6 @@ def test_filter_data_date_is_wrong_type(client, value, op):
 def test_filter_data_multistring_cant_use_is_is_not(client, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
-    # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"choices": {op: "Opt1"}}})
     assert response.status_code == 422
 
@@ -736,3 +731,43 @@ def test_filter_data_date_is_not_basic(client):
 
     assert len(data) == 4
     assert all(x["day_of"] != no_timezone_date("1999-05-08T10:00:00.000+09:00") for x in data)
+
+
+def test_filter_data_boolean_cant_use_is_empty(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {"is_empty": True}}})
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "attr_to_filter, expected_n_empty", [("day_of", 4), ("price", 2), ("my_title", 2), ("choices", 2)]
+)
+def test_filter_data_is_empty_basic(client, attr_to_filter, expected_n_empty):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get empty values
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {attr_to_filter: {"is_empty": True}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == expected_n_empty
+    assert all(x[attr_to_filter] is None for x in data)
+
+    # Get non-empty values
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {attr_to_filter: {"is_empty": False}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 8 - expected_n_empty  # 8 is the total number of elements in this table
+    assert all(x[attr_to_filter] is not None for x in data)
+
+
+@pytest.mark.parametrize("value", [65, "not_a_bool"])
+def test_filter_data_is_empty_wrong_value_type(client, value):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"is_empty": value}}})
+    assert response.status_code == 422

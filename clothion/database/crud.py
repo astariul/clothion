@@ -300,12 +300,13 @@ def make_condition(  # noqa: C901
         expected_types = (str,)
     elif prop_type == DATE:
         expected_types = (datetime,)
-        try:
-            if not isinstance(value, str):
-                raise ValueError
-            value = isoparse(value).astimezone(timezone.utc)
-        except ValueError:
-            raise WrongFilter(f"Given value for date ({value}) is not a valid date)")
+        if op != "is_empty":
+            try:
+                if not isinstance(value, str):
+                    raise ValueError
+                value = isoparse(value).astimezone(timezone.utc)
+            except ValueError:
+                raise WrongFilter(f"Given value for date ({value}) is not a valid date)")
     elif prop_type == MULTISTRING:
         expected_types = (str,)
 
@@ -325,6 +326,18 @@ def make_condition(  # noqa: C901
             return prop == value
         elif op == "is_not":
             return prop != value
+    elif op == "is_empty":
+        # Parameters / types validation
+        if prop_type == BOOL:
+            raise WrongFilter(f"Boolean attribute can never be empty. Can't use `{op}` filter.")
+        if type(value) != bool:
+            raise WrongFilter(f"Filter `{op}` expected a value of type boolean (but got {type(value)})")
+
+        # Actual condition
+        if value is True:
+            return prop.is_(None)
+        else:
+            return prop.is_not(None)
     else:
         raise WrongFilter(f"Unknown filter condition ({op})")
 
