@@ -800,7 +800,7 @@ def test_filter_data_date_after_basic(client):
 
 
 @pytest.mark.parametrize("attr", ["price", "my_title", "choices", "ckbox"])
-@pytest.mark.parametrize("op", ["after", "on_or_after"])
+@pytest.mark.parametrize("op", ["after", "on_or_after", "before", "on_or_before"])
 def test_filter_data_date_op_wrong_attribute(client, attr, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
@@ -822,3 +822,29 @@ def test_filter_data_date_on_or_after_basic(client):
 
     assert len(data) == 4
     assert all(no_timezone_date(x["day_of"]) >= no_timezone_date(date) for x in data)
+
+
+def test_filter_data_date_before_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # The results shouldn't include the date itself (because it's BEFORE X)
+    date = "2026-05-08T10:00:00.000+09:00"
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"before": date}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 3
+    assert all(no_timezone_date(x["day_of"]) < no_timezone_date(date) for x in data)
+
+
+def test_filter_data_date_on_or_before_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # The results should include the date itself
+    date = "2026-05-08T10:00:00.000+09:00"
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"on_or_before": date}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 4
+    assert all(no_timezone_date(x["day_of"]) <= no_timezone_date(date) for x in data)

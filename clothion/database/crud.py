@@ -338,15 +338,20 @@ def make_condition(  # noqa: C901
             return prop.is_(None)
         else:
             return prop.is_not(None)
-    elif op in ["after", "on_or_after"]:
+    elif op in ["after", "on_or_after", "before", "on_or_before"]:
         # Parameters / types validation
         if prop_type != DATE:
             raise WrongFilter(f"Filter `{op}` can only be applied to Date attributes.")
 
+        # Actual conditions
         if op == "after":
             return prop > value
         elif op == "on_or_after":
             return prop >= value
+        elif op == "before":
+            return prop < value
+        elif op == "on_or_before":
+            return prop <= value
     else:
         raise WrongFilter(f"Unknown filter condition ({op})")
 
