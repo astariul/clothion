@@ -1,6 +1,6 @@
-import datetime
 import uuid
 from collections import Counter
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Union
 
 import httpx
@@ -722,18 +722,49 @@ class MockDBQuery:
                 choices=multi_select(["Opt1"]),
             )
             return response.get()
+        elif database_id == "table_with_tz_dates":
+            response = QueryResponse()
+            # Try various format : TZ-unaware, UTC-aware, TZ-aware
+            response.add_element(
+                title=title("UTC"),
+                x=date("2023-05-27T10:03:01.264216"),
+                created_at=created_at("2023-05-27T10:20:09.323332+00:00"),
+                edited_at=edited_at("2023-05-27T10:20:09.323332+09:00"),
+            )
+            return response.get()
         elif database_id == "table_with_dates":
             response = QueryResponse()
-            now = datetime.datetime.now()
-            response.add_element(t=title("E1"), d=date((now - datetime.timedelta(days=468)).isoformat()))
-            response.add_element(t=title("E2"), d=date((now - datetime.timedelta(days=78)).isoformat()))
-            response.add_element(t=title("E3"), d=date((now - datetime.timedelta(days=15)).isoformat()))
-            response.add_element(t=title("E4"), d=date((now - datetime.timedelta(days=2)).isoformat()))
-            response.add_element(t=title("E5"), d=date((now).isoformat()))
-            response.add_element(t=title("E6"), d=date((now + datetime.timedelta(hours=2)).isoformat()))
-            response.add_element(t=title("E7"), d=date((now + datetime.timedelta(days=8)).isoformat()))
-            response.add_element(t=title("E8"), d=date((now + datetime.timedelta(days=34)).isoformat()))
-            response.add_element(t=title("E9"), d=date((now + datetime.timedelta(days=985)).isoformat()))
+            now = datetime.now(timezone.utc)
+            response.add_element(t=title("E1"), d=date((now - timedelta(days=468)).isoformat()))
+            response.add_element(t=title("E2"), d=date((now - timedelta(days=78)).isoformat()))
+            response.add_element(t=title("E3"), d=date((now - timedelta(days=15)).isoformat()))
+            response.add_element(t=title("E4"), d=date((now - timedelta(days=2)).isoformat()))
+            response.add_element(t=title("E5"), d=date(now.isoformat()))
+            response.add_element(t=title("E6"), d=date((now + timedelta(hours=2)).isoformat()))
+            response.add_element(t=title("E7"), d=date((now + timedelta(days=8)).isoformat()))
+            response.add_element(t=title("E8"), d=date((now + timedelta(days=34)).isoformat()))
+            response.add_element(t=title("E9"), d=date((now + timedelta(days=985)).isoformat()))
+            return response.get()
+        elif database_id == "table_with_dates_2":
+            response = QueryResponse()
+            # 1 element at the beginning / end of the current week / month / year
+            now = datetime.now(timezone.utc)
+            monday_morning = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0)
+            sunday_evening = (monday_morning + timedelta(days=6)).replace(hour=23, minute=59, second=59)
+            first_of_the_month = now.replace(day=1, hour=0, minute=0, second=0)
+            last_of_the_month = (now.replace(day=28) + timedelta(days=4)).replace(
+                day=1, hour=23, minute=59, second=59
+            ) - timedelta(days=1)
+            jan_first = now.replace(month=1, day=1, hour=0, minute=0, second=0)
+            dec_last = (jan_first + timedelta(days=365)).replace(day=1, hour=23, minute=59, second=59) - timedelta(
+                days=1
+            )
+            response.add_element(t=title("E1"), d=date(monday_morning.isoformat()))
+            response.add_element(t=title("E1"), d=date(sunday_evening.isoformat()))
+            response.add_element(t=title("E1"), d=date(first_of_the_month.isoformat()))
+            response.add_element(t=title("E1"), d=date(last_of_the_month.isoformat()))
+            response.add_element(t=title("E1"), d=date(jan_first.isoformat()))
+            response.add_element(t=title("E1"), d=date(dec_last.isoformat()))
             return response.get()
         elif database_id == "empty_table":
             return QueryResponse().get()

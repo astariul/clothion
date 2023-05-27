@@ -136,6 +136,24 @@ def get_element_by_notion_id(db: Session, notion_id: str):
     return db.query(models.Element).filter(models.Element.notion_id == notion_id).first()
 
 
+def parse_date(d: str) -> datetime:
+    """Small util function parsing a ISO-8601 date string into a datetime
+    object, removing the timezone if any.
+
+    Args:
+        d (str): ISO-8601 date string to parse.
+
+    Returns:
+        datetime: Date parsed.
+    """
+    date = isoparse(d)
+
+    if date.tzinfo is not None:
+        date = date.astimezone(timezone.utc)
+
+    return date
+
+
 def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: str = None) -> models.Base:  # noqa: C901
     """Helper function converting an attribute coming from the Notion API into
     a DB row corresponding to the right type.
@@ -194,7 +212,7 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
         kwargs["is_string"] = True
     elif attr["type"] == "date":
         if attr["date"]:
-            kwargs["value_date"] = isoparse(attr["date"]["start"]).astimezone(timezone.utc)
+            kwargs["value_date"] = parse_date(attr["date"]["start"])
         kwargs["is_date"] = True
     elif attr["type"] == "url":
         if attr["url"]:
@@ -215,13 +233,13 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
         # Types that can't be handled by our DB
         return None
     elif attr["type"] == "created_time":
-        kwargs["value_date"] = isoparse(attr["created_time"]).astimezone(timezone.utc)
+        kwargs["value_date"] = parse_date(attr["created_time"])
         kwargs["is_date"] = True
     elif attr["type"] == "created_by":
         kwargs["value_string"] = attr["created_by"]["id"]
         kwargs["is_string"] = True
     elif attr["type"] == "last_edited_time":
-        kwargs["value_date"] = isoparse(attr["last_edited_time"]).astimezone(timezone.utc)
+        kwargs["value_date"] = parse_date(attr["last_edited_time"])
         kwargs["is_date"] = True
     elif attr["type"] == "last_edited_by":
         kwargs["value_string"] = attr["last_edited_by"]["id"]
@@ -301,7 +319,7 @@ def make_condition(  # noqa: C901
         expected_types = (str,)
     elif prop_type == DATE:
         expected_types = (datetime,)
-        if op not in ["is_empty", "past", "next"]:
+        if op not in ["is_empty", "past", "next", "this"]:
             # Other operations than these should have a datetime string as value
             try:
                 if not isinstance(value, str):
@@ -340,7 +358,7 @@ def make_condition(  # noqa: C901
             return prop.is_(None)
         else:
             return prop.is_not(None)
-    elif op in ["after", "on_or_after", "before", "on_or_before", "past", "next"]:
+    elif op in ["after", "on_or_after", "before", "on_or_before", "past", "next", "this"]:
         # Parameters / types validation
         if prop_type != DATE:
             raise WrongFilter(f"Filter `{op}` can only be applied to Date attributes.")
@@ -364,11 +382,25 @@ def make_condition(  # noqa: C901
             else:
                 raise WrongFilter(f"Unknown time window `{value}`. Please use `week`, `month` or `year`.")
 
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             if op == "past":
                 return prop.between(now - delta, now)
             elif op == "next":
                 return prop.between(now, now + delta)
+        elif op == "this":
+            today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            if value == "week":
+                start = today - relativedelta(days=today.weekday())
+                delta = relativedelta(weeks=1)
+            elif value == "month":
+                start = today.replace(day=1)
+                delta = relativedelta(months=1)
+            elif value == "year":
+                start = today.replace(month=1, day=1)
+                delta = relativedelta(years=1)
+            else:
+                raise WrongFilter(f"Unknown time window `{value}`. Please use `week`, `month` or `year`.")
+            return prop.between(start, start + delta)
     else:
         raise WrongFilter(f"Unknown filter condition ({op})")
 

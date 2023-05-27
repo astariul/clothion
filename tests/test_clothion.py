@@ -1,5 +1,5 @@
-import datetime
 import os
+from datetime import datetime, timezone
 
 import pytest
 from dateutil.relativedelta import relativedelta
@@ -317,6 +317,20 @@ def test_access_data_full_data_range(client):
     assert data[0]["date"] == no_timezone_date("2023-05-08T10:00:00.000+09:00", as_str=True)
     assert data[0]["people"] == ["111"]
     assert data[0]["files"] == ["img.png"]
+
+
+def test_access_data_utc_date(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_tz_dates")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["title"] == "UTC"
+    assert data[0]["x"] == no_timezone_date("2023-05-27T10:03:01.264216", as_str=True)
+    assert data[0]["created_at"] == no_timezone_date("2023-05-27T10:20:09.323332+00:00", as_str=True)
+    assert data[0]["edited_at"] == no_timezone_date("2023-05-27T10:20:09.323332+09:00", as_str=True)
 
 
 def test_access_data_empty_data_range(client):
@@ -859,8 +873,8 @@ def test_filter_data_date_on_or_before_basic(client):
 
 
 @pytest.mark.parametrize("attr", ["price", "my_title", "choices", "ckbox"])
-@pytest.mark.parametrize("op", ["past", "next"])
-def test_filter_data_date_past_next_wrong_attribute(client, attr, op):
+@pytest.mark.parametrize("op", ["past", "next", "this"])
+def test_filter_data_date_past_next_this_wrong_attribute(client, attr, op):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
     # Get empty values
@@ -872,14 +886,13 @@ def test_filter_data_date_past_next_wrong_attribute(client, attr, op):
 def test_filter_data_date_past_basic(client, period, n_expected_results):
     integration_id, table_id = create_table(client, "secret_token", "table_with_dates")
 
-    # The results should include the date itself
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {"past": period}}})
     assert response.status_code == 200
     data = response.json()
 
     assert len(data) == n_expected_results
 
-    now = datetime.datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if period == "week":
         start = now - relativedelta(weeks=1)
     elif period == "month":
@@ -894,14 +907,13 @@ def test_filter_data_date_past_basic(client, period, n_expected_results):
 def test_filter_data_date_next_basic(client, period, n_expected_results):
     integration_id, table_id = create_table(client, "secret_token", "table_with_dates")
 
-    # The results should include the date itself
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {"next": period}}})
     assert response.status_code == 200
     data = response.json()
 
     assert len(data) == n_expected_results
 
-    now = datetime.datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if period == "week":
         end = now + relativedelta(weeks=1)
     elif period == "month":
@@ -912,11 +924,34 @@ def test_filter_data_date_next_basic(client, period, n_expected_results):
     assert all(now <= no_timezone_date(x["d"]) <= end for x in data)
 
 
-@pytest.mark.parametrize("op", ["past", "next"])
+@pytest.mark.parametrize("op", ["past", "next", "this"])
 @pytest.mark.parametrize("period", ["decade", "minute"])
-def test_filter_data_date_past_next_wrong_period(client, op, period):
+def test_filter_data_date_past_next_this_wrong_period(client, op, period):
     integration_id, table_id = create_table(client, "secret_token", "table_with_dates")
 
-    # The results should include the date itself
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {op: period}}})
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("period, n_expected_results", [("week", 2), ("month", 4), ("year", 6)])
+def test_filter_data_date_this_basic(client, period, n_expected_results):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_dates_2")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {"this": period}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == n_expected_results
+
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    if period == "week":
+        start = today - relativedelta(days=today.weekday())
+        delta = relativedelta(weeks=1)
+    elif period == "month":
+        start = today.replace(day=1)
+        delta = relativedelta(months=1)
+    elif period == "year":
+        start = today.replace(month=1, day=1)
+        delta = relativedelta(years=1)
+
+    assert all(start <= no_timezone_date(x["d"]) <= start + delta for x in data)
