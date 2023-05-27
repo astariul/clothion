@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from collections import Counter
 from typing import Dict, List, Union
@@ -721,6 +722,21 @@ class MockDBQuery:
                 choices=multi_select(["Opt1"]),
             )
             return response.get()
+        elif database_id == "table_with_dates":
+            response = QueryResponse()
+            now = datetime.datetime.now()
+            response.add_element(t=title("E1"), d=date((now - datetime.timedelta(days=468)).isoformat()))
+            response.add_element(t=title("E2"), d=date((now - datetime.timedelta(days=78)).isoformat()))
+            response.add_element(t=title("E3"), d=date((now - datetime.timedelta(days=15)).isoformat()))
+            response.add_element(t=title("E4"), d=date((now - datetime.timedelta(days=2)).isoformat()))
+            response.add_element(t=title("E5"), d=date((now).isoformat()))
+            response.add_element(t=title("E6"), d=date((now + datetime.timedelta(hours=2)).isoformat()))
+            response.add_element(t=title("E7"), d=date((now + datetime.timedelta(days=8)).isoformat()))
+            response.add_element(t=title("E8"), d=date((now + datetime.timedelta(days=34)).isoformat()))
+            response.add_element(t=title("E9"), d=date((now + datetime.timedelta(days=985)).isoformat()))
+            return response.get()
+        elif database_id == "empty_table":
+            return QueryResponse().get()
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 

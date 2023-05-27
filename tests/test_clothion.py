@@ -1,6 +1,8 @@
+import datetime
 import os
 
 import pytest
+from dateutil.relativedelta import relativedelta
 from fastapi.testclient import TestClient
 
 from . import mock_notion_api  # noqa: F401 (just importing it will monkey-patch the notion API !)
@@ -512,7 +514,6 @@ def test_calculate_data_unique_count(client):
 def test_filter_data_wrong_attribute_name(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
-    # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"check-box": {"is": True}}})
     assert response.status_code == 422
 
@@ -520,9 +521,16 @@ def test_filter_data_wrong_attribute_name(client):
 def test_filter_data_wrong_filter_name(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
-    # Get values that are True
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {"wrong_is": True}}})
     assert response.status_code == 422
+
+
+def test_filter_data_empty_table(client):
+    integration_id, table_id = create_table(client, "secret_token", "empty_table")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"ckbox": {"is": True}}})
+    assert response.status_code == 200
+    assert len(response.json()) == 0
 
 
 def test_filter_data_boolean_is_basic(client):
@@ -848,3 +856,67 @@ def test_filter_data_date_on_or_before_basic(client):
 
     assert len(data) == 3
     assert all(no_timezone_date(x["day_of"]) <= no_timezone_date(date) for x in data)
+
+
+@pytest.mark.parametrize("attr", ["price", "my_title", "choices", "ckbox"])
+@pytest.mark.parametrize("op", ["past", "next"])
+def test_filter_data_date_past_next_wrong_attribute(client, attr, op):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get empty values
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {attr: {op: "week"}}})
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("period, n_expected_results", [("week", 2), ("month", 3), ("year", 4)])
+def test_filter_data_date_past_basic(client, period, n_expected_results):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_dates")
+
+    # The results should include the date itself
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {"past": period}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == n_expected_results
+
+    now = datetime.datetime.utcnow()
+    if period == "week":
+        start = now - relativedelta(weeks=1)
+    elif period == "month":
+        start = now - relativedelta(months=1)
+    elif period == "year":
+        start = now - relativedelta(years=1)
+
+    assert all(start <= no_timezone_date(x["d"]) <= now for x in data)
+
+
+@pytest.mark.parametrize("period, n_expected_results", [("week", 1), ("month", 2), ("year", 3)])
+def test_filter_data_date_next_basic(client, period, n_expected_results):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_dates")
+
+    # The results should include the date itself
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {"next": period}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == n_expected_results
+
+    now = datetime.datetime.utcnow()
+    if period == "week":
+        end = now + relativedelta(weeks=1)
+    elif period == "month":
+        end = now + relativedelta(months=1)
+    elif period == "year":
+        end = now + relativedelta(years=1)
+
+    assert all(now <= no_timezone_date(x["d"]) <= end for x in data)
+
+
+@pytest.mark.parametrize("op", ["past", "next"])
+@pytest.mark.parametrize("period", ["decade", "minute"])
+def test_filter_data_date_past_next_wrong_period(client, op, period):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_dates")
+
+    # The results should include the date itself
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {op: period}}})
+    assert response.status_code == 422

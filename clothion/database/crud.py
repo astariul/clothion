@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Callable, Dict, Union
 
 from dateutil.parser import isoparse
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import and_, sql
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
@@ -300,7 +301,8 @@ def make_condition(  # noqa: C901
         expected_types = (str,)
     elif prop_type == DATE:
         expected_types = (datetime,)
-        if op != "is_empty":
+        if op not in ["is_empty", "past", "next"]:
+            # Other operations than these should have a datetime string as value
             try:
                 if not isinstance(value, str):
                     raise ValueError
@@ -338,7 +340,7 @@ def make_condition(  # noqa: C901
             return prop.is_(None)
         else:
             return prop.is_not(None)
-    elif op in ["after", "on_or_after", "before", "on_or_before"]:
+    elif op in ["after", "on_or_after", "before", "on_or_before", "past", "next"]:
         # Parameters / types validation
         if prop_type != DATE:
             raise WrongFilter(f"Filter `{op}` can only be applied to Date attributes.")
@@ -352,6 +354,21 @@ def make_condition(  # noqa: C901
             return prop < value
         elif op == "on_or_before":
             return prop <= value
+        elif op == "past" or op == "next":
+            if value == "week":
+                delta = relativedelta(weeks=1)
+            elif value == "month":
+                delta = relativedelta(months=1)
+            elif value == "year":
+                delta = relativedelta(years=1)
+            else:
+                raise WrongFilter(f"Unknown time window `{value}`. Please use `week`, `month` or `year`.")
+
+            now = datetime.utcnow()
+            if op == "past":
+                return prop.between(now - delta, now)
+            elif op == "next":
+                return prop.between(now, now + delta)
     else:
         raise WrongFilter(f"Unknown filter condition ({op})")
 
@@ -376,15 +393,16 @@ def create_db_filter(  # noqa: C901
         sql.selectable.Exists: DB filter that can be applied with `filter`
             method in `sqlalchemy`.
     """
-    # No filter
-    if filter is None:
-        return None
-
     # We will gather the filters here
     db_conditions = []
 
+    # No filter, or if the table is empty, nothing to filter
+    db_element = last_table_element(db, table_id)
+    if filter is None or db_element is None:
+        return None
+
     # First, we need the schema for validating the filter
-    db_attributes = {attr.name: attr for attr in last_table_element(db, table_id).attributes}
+    db_attributes = {attr.name: attr for attr in db_element.attributes}
 
     # Filter are applied on each attribute
     for attr_name, attr_filter in filter.items():
