@@ -955,3 +955,68 @@ def test_filter_data_date_this_basic(client, period, n_expected_results):
         delta = relativedelta(years=1)
 
     assert all(start <= no_timezone_date(x["d"]) <= start + delta for x in data)
+
+
+@pytest.mark.parametrize("attr", ["day_of", "my_title", "choices", "ckbox"])
+@pytest.mark.parametrize("op", ["greater_than", "less_than", "greater_or_equal", "less_or_equal"])
+def test_filter_data_number_comp_wrong_attribute(client, attr, op):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get empty values
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {attr: {op: 42}}})
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("op", ["greater_than", "less_than", "greater_or_equal", "less_or_equal"])
+@pytest.mark.parametrize("value", ["string", True])
+def test_filter_data_number_comp_wrong_value_type(client, op, value):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {op: value}}})
+    assert response.status_code == 422
+
+
+def test_filter_data_number_greater_than_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"greater_than": 56.5}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 3
+    assert all(x["price"] > 56.5 for x in data)
+
+
+def test_filter_data_number_less_than_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"less_than": 56.5}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert all(x["price"] < 56.5 for x in data)
+
+
+def test_filter_data_number_greater_or_equal_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"greater_or_equal": 56.5}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 5
+    assert all(x["price"] >= 56.5 for x in data)
+
+
+def test_filter_data_number_less_or_equal_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"less_or_equal": 56.5}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 3
+    assert all(x["price"] <= 56.5 for x in data)

@@ -337,9 +337,7 @@ def make_condition(  # noqa: C901
                 f"Multi-string attribute can't use `{op}` filters. Use `contains`/`does_not_contain` instead"
             )
         if type(value) not in expected_types:
-            raise WrongFilter(
-                f"Filter condition `{op}` expected a value of type {expected_types} (but got {type(value)})"
-            )
+            raise WrongFilter(f"Filter `{op}` expected a value of type {expected_types} (but got {type(value)})")
 
         # Actual comparison
         if op == "is":
@@ -401,6 +399,22 @@ def make_condition(  # noqa: C901
             else:
                 raise WrongFilter(f"Unknown time window `{value}`. Please use `week`, `month` or `year`.")
             return prop.between(start, start + delta)
+    elif op in ["greater_than", "less_than", "greater_or_equal", "less_or_equal"]:
+        # Parameters / types validation
+        if prop_type != NUMBER:
+            raise WrongFilter(f"Filter `{op}` can only be applied to number attributes.")
+        if type(value) not in expected_types:
+            raise WrongFilter(f"Filter `{op}` expected a value of type {expected_types} (but got {type(value)})")
+
+        # Actual condition
+        if op == "greater_than":
+            return prop > value
+        elif op == "greater_or_equal":
+            return prop >= value
+        elif op == "less_than":
+            return prop < value
+        elif op == "less_or_equal":
+            return prop <= value
     else:
         raise WrongFilter(f"Unknown filter condition ({op})")
 
