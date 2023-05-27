@@ -506,7 +506,7 @@ def test_calculate_data_unique_count(client):
     data = response.json()
 
     assert len(data) == 1
-    assert {"my_title": 5, "email": 5, "price": 4, "day_of": 2, "ckbox": 2, "choices": 4} in data
+    assert {"my_title": 5, "email": 5, "price": 4, "day_of": 3, "ckbox": 2, "choices": 4} in data
 
 
 def test_filter_data_wrong_attribute_name(client):
@@ -624,7 +624,7 @@ def test_filter_data_date_is_basic(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 3
+    assert len(data) == 2
     assert all(x["day_of"] == no_timezone_date("2023-05-08T10:00:00.000+09:00", as_str=True) for x in data)
 
     # Get values that doesn't exist
@@ -732,7 +732,7 @@ def test_filter_data_date_is_not_basic(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 1
+    assert len(data) == 2
     assert all(x["day_of"] != no_timezone_date("2023-05-08T10:00:00.000+09:00", as_str=True) for x in data)
 
     # Get values that doesn't exist
@@ -820,7 +820,7 @@ def test_filter_data_date_on_or_after_basic(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 4
+    assert len(data) == 3
     assert all(no_timezone_date(x["day_of"]) >= no_timezone_date(date) for x in data)
 
 
@@ -828,12 +828,12 @@ def test_filter_data_date_before_basic(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
     # The results shouldn't include the date itself (because it's BEFORE X)
-    date = "2026-05-08T10:00:00.000+09:00"
+    date = "2023-05-08T10:00:00.000+09:00"
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"before": date}}})
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 3
+    assert len(data) == 1
     assert all(no_timezone_date(x["day_of"]) < no_timezone_date(date) for x in data)
 
 
@@ -841,10 +841,10 @@ def test_filter_data_date_on_or_before_basic(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
 
     # The results should include the date itself
-    date = "2026-05-08T10:00:00.000+09:00"
+    date = "2023-05-08T10:00:00.000+09:00"
     response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"day_of": {"on_or_before": date}}})
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 4
+    assert len(data) == 3
     assert all(no_timezone_date(x["day_of"]) <= no_timezone_date(date) for x in data)

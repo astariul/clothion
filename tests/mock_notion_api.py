@@ -708,7 +708,7 @@ class MockDBQuery:
                 my_title=title("Elem4"),
                 email=email("me5@lol.com"),
                 price=number(56.5),
-                day_of=date("2023-05-08T10:00:00.000+09:00"),
+                day_of=date("2001-05-08T10:00:00.000+09:00"),
                 ckbox=checkbox(False),
                 choices=multi_select(["Opt1", "Opt2"]),
             )
