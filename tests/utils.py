@@ -39,5 +39,9 @@ def no_timezone_date(date: str, as_str: bool = False) -> Union[str, datetime]:
             as a ISO-8601 string if `iso_format` was set to `True`, or as a
             datetime object.
     """
-    d = isoparse(date).astimezone(timezone.utc).replace(tzinfo=None)
+    d = isoparse(date)
+
+    if d.tzinfo is not None:
+        d = d.astimezone(timezone.utc).replace(tzinfo=None)
+
     return d.isoformat() if as_str else d
