@@ -760,14 +760,21 @@ class MockDBQuery:
                 days=1
             )
             response.add_element(t=title("E1"), d=date(monday_morning.isoformat()))
-            response.add_element(t=title("E1"), d=date(sunday_evening.isoformat()))
-            response.add_element(t=title("E1"), d=date(first_of_the_month.isoformat()))
-            response.add_element(t=title("E1"), d=date(last_of_the_month.isoformat()))
-            response.add_element(t=title("E1"), d=date(jan_first.isoformat()))
-            response.add_element(t=title("E1"), d=date(dec_last.isoformat()))
+            response.add_element(t=title("E2"), d=date(sunday_evening.isoformat()))
+            response.add_element(t=title("E3"), d=date(first_of_the_month.isoformat()))
+            response.add_element(t=title("E4"), d=date(last_of_the_month.isoformat()))
+            response.add_element(t=title("E5"), d=date(jan_first.isoformat()))
+            response.add_element(t=title("E6"), d=date(dec_last.isoformat()))
             return response.get()
         elif database_id == "empty_table":
             return QueryResponse().get()
+        elif database_id == "table_with_strings":
+            response = QueryResponse()
+            response.add_element(sen=title("I like you"))
+            response.add_element(sen=title("I like this"))
+            response.add_element(sen=title("You like you"))
+            response.add_element(sen=title("You like this"))
+            return response.get()
         else:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 

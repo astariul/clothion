@@ -467,8 +467,8 @@ def create_db_filter(  # noqa: C901
         sql.selectable.Exists: DB filter that can be applied with `filter`
             method in `sqlalchemy`.
     """
-    # We will gather the filters here
-    db_conditions = []
+    # We will gather the filters on each attribute here
+    db_elem_conditions = []
 
     # No filter, or if the table is empty, nothing to filter
     db_element = last_table_element(db, table_id)
@@ -504,13 +504,12 @@ def create_db_filter(  # noqa: C901
                 db_attr_conditions.append(make_condition(models.Attribute.value_string, op, value, MULTISTRING))
 
         # Gather the conditions for this attribute
-        db_conditions.append(and_(*db_attr_conditions))
+        db_attr_condition = and_(*db_attr_conditions)
 
-    # Gather the conditions across attributes
-    db_condition = and_(*db_conditions)
+        # And find elements that have such attribute
+        db_elem_conditions.append(models.Element.attributes.any(db_attr_condition))
 
-    # Use `any`, to ensure at least one attribute in the element meets the condition
-    return models.Element.attributes.any(db_condition)
+    return and_(*db_elem_conditions)
 
 
 def get_attributes_of_table(

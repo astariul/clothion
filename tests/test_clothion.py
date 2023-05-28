@@ -1119,3 +1119,73 @@ def test_filter_data_multistring_does_not_contain_basic(client):
 
     assert len(data) == 1
     assert all("Opt1" not in x["choices"] for x in data)
+
+
+def test_filter_data_several_conditions_for_same_attribute_multistring(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"filter": {"choices": {"contains": "Opt1", "does_not_contain": "Opt2"}}},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    assert all("Opt1" in x["choices"] and "Opt2" not in x["choices"] for x in data)
+
+
+def test_filter_data_several_conditions_for_same_attribute_number(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"price": {"greater_or_equal": 0, "less_than": 60.5}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 3
+    assert all(0 <= x["price"] < 60.5 for x in data)
+
+
+def test_filter_data_several_conditions_for_same_attribute_string(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_strings")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"sen": {"starts_with": "You", "ends_with": "this"}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert all(x["sen"].startswith("You") and x["sen"].endswith("this") for x in data)
+
+
+def test_filter_data_several_conditions_for_same_attribute_date(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={
+            "filter": {"day_of": {"after": "2023-01-01T00:00:00.000+09:00", "before": "2023-12-31T00:00:00.000+09:00"}}
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    assert all(x["day_of"].startswith("2023") for x in data)
+
+
+def test_filter_data_several_conditions_for_different_attributes(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"filter": {"day_of": {"is_empty": True}, "email": {"contains": "5"}}},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert all("5" in x["email"] and x["day_of"] is None for x in data)
