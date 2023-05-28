@@ -332,6 +332,8 @@ def make_condition(  # noqa: C901
         if op != "is_empty":
             # Inside the DB, the values are stored as JSON, so we need to encode the
             # given value properly so that `contains` and `does_not_contain` works properly
+            if not isinstance(value, str):
+                raise WrongFilter(f"Filter `{op}` expected a value of type {expected_types} (but got {type(value)})")
             value = json.dumps(value)
 
     if op == "is" or op == "is_not":
@@ -443,6 +445,15 @@ def make_condition(  # noqa: C901
             return prop.contains(value)
         elif op == "does_not_contain":
             return not_(prop.contains(value))
+    elif op == "contains_only":
+        # Parameters / types validation
+        if prop_type != MULTISTRING:
+            raise WrongFilter(f"Filter `{op}` can only be applied to multi-strings attributes.")
+        # No need to check that value is a `str`, since we know it's a multistring it was parsed earlier
+
+        # Actual condition
+        # If it contains only the given value, then represent the value as a list and check for equality !
+        return prop == f"[{value}]"
     else:
         raise WrongFilter(f"Unknown filter condition ({op})")
 

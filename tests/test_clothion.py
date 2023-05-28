@@ -1189,3 +1189,34 @@ def test_filter_data_several_conditions_for_different_attributes(client):
 
     assert len(data) == 1
     assert all("5" in x["email"] and x["day_of"] is None for x in data)
+
+
+@pytest.mark.parametrize("attr", ["price", "day_of", "ckbox", "email"])
+def test_filter_data_contains_only_wrong_attribute(client, attr):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get empty values
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {attr: {"contains_only": "test"}}})
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("op", ["contains", "does_not_contain", "contains_only"])
+@pytest.mark.parametrize("value", [45, True])
+def test_filter_data_multistring_op_wrong_value_type(client, op, value):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"choices": {op: value}}})
+    assert response.status_code == 422
+
+
+def test_filter_data_contains_only_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"choices": {"contains_only": "Opt1"}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    assert all(x["choices"] == ["Opt1"] for x in data)
