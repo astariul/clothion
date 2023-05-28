@@ -1095,3 +1095,27 @@ def test_filter_data_string_does_not_contain_basic(client):
 
     assert len(data) == 4
     assert all("5@" not in x["email"] for x in data)
+
+
+def test_filter_data_multistring_contains_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"choices": {"contains": "Opt1"}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 5
+    assert all("Opt1" in x["choices"] for x in data)
+
+
+def test_filter_data_multistring_does_not_contain_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data", json={"filter": {"choices": {"does_not_contain": "Opt1"}}}
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert all("Opt1" not in x["choices"] for x in data)

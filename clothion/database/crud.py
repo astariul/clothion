@@ -329,6 +329,10 @@ def make_condition(  # noqa: C901
                 raise WrongFilter(f"Given value for date ({value}) is not a valid date)")
     elif prop_type == MULTISTRING:
         expected_types = (str,)
+        if op != "is_empty":
+            # Inside the DB, the values are stored as JSON, so we need to encode the
+            # given value properly so that `contains` and `does_not_contain` works properly
+            value = json.dumps(value)
 
     if op == "is" or op == "is_not":
         # Parameters / types validation
