@@ -507,6 +507,11 @@ def create_db_filter(  # noqa: C901
     for attr_name, attr_filter in filter.items():
         if attr_name not in db_attributes:
             raise WrongFilter(f"Unknown attribute ({attr_name})")
+        if isinstance(attr_filter, list):
+            raise WrongFilter(
+                f"Received a list instead of a dict for {attr_name}. Only `or` filter can be a list, you should use "
+                "a dict for individual filters."
+            )
 
         # Always the first condition is to get the right attribute (identified by its name)
         db_attr_conditions = [models.Attribute.name == attr_name]

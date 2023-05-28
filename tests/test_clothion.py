@@ -1248,3 +1248,13 @@ def test_filter_data_or_condition_on_different_attributes(client):
 
     assert len(data) == 4
     assert all(x["email"].startswith("me5") or x["price"] > 450 for x in data)
+
+
+def test_filter_data_wrong_type_list_instead_of_dict(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"filter": {"price": [{"greater_than": 450}]}},
+    )
+    assert response.status_code == 422
