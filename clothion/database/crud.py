@@ -5,7 +5,7 @@ from typing import Callable, Dict, Union
 
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import and_, sql
+from sqlalchemy import and_, not_, sql
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
@@ -427,6 +427,18 @@ def make_condition(  # noqa: C901
             return prop.startswith(value)
         elif op == "ends_with":
             return prop.endswith(value)
+    elif op in ["contains", "does_not_contain"]:
+        # Parameters / types validation
+        if prop_type != STRING and prop_type != MULTISTRING:
+            raise WrongFilter(f"Filter `{op}` can only be applied to string or multi-strings attributes.")
+        if type(value) not in expected_types:
+            raise WrongFilter(f"Filter `{op}` expected a value of type {expected_types} (but got {type(value)})")
+
+        # Actual condition
+        if op == "contains":
+            return prop.contains(value)
+        elif op == "does_not_contain":
+            return not_(prop.contains(value))
     else:
         raise WrongFilter(f"Unknown filter condition ({op})")
 
