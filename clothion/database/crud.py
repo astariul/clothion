@@ -415,6 +415,18 @@ def make_condition(  # noqa: C901
             return prop < value
         elif op == "less_or_equal":
             return prop <= value
+    elif op in ["starts_with", "ends_with"]:
+        # Parameters / types validation
+        if prop_type != STRING:
+            raise WrongFilter(f"Filter `{op}` can only be applied to string attributes.")
+        if type(value) not in expected_types:
+            raise WrongFilter(f"Filter `{op}` expected a value of type {expected_types} (but got {type(value)})")
+
+        # Actual condition
+        if op == "starts_with":
+            return prop.startswith(value)
+        elif op == "ends_with":
+            return prop.endswith(value)
     else:
         raise WrongFilter(f"Unknown filter condition ({op})")
 

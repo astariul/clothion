@@ -1020,3 +1020,44 @@ def test_filter_data_number_less_or_equal_basic(client):
 
     assert len(data) == 3
     assert all(x["price"] <= 56.5 for x in data)
+
+
+@pytest.mark.parametrize("attr", ["price", "day_of", "choices", "ckbox"])
+@pytest.mark.parametrize("op", ["starts_with", "ends_with"])
+def test_filter_data_string_op_wrong_attribute(client, attr, op):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    # Get empty values
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {attr: {op: "test"}}})
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("op", ["starts_with", "ends_with"])
+@pytest.mark.parametrize("value", [45, True])
+def test_filter_data_string_op_wrong_value_type(client, op, value):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"my_title": {op: value}}})
+    assert response.status_code == 422
+
+
+def test_filter_data_string_starts_with_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"email": {"starts_with": "me5"}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 3
+    assert all(x["email"].startswith("me5") for x in data)
+
+
+def test_filter_data_string_ends_with_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"my_title": {"ends_with": "4"}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    assert all(x["my_title"].endswith("4") for x in data)
