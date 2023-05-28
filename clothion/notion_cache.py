@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Union
 
 from notion_client import APIResponseError  # noqa: F401
 from notion_client import Client
@@ -22,7 +22,7 @@ class Parameters(BaseModel):
     reset_cache: bool = False
     update_cache: bool = True
     calculate: Literal[None, "sum", "min", "max", "average", "count", "count_unique"] = None
-    filter: Dict[str, Dict] = None
+    filter: Dict[str, Union[Dict, List]] = None
 
 
 def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) -> List[Dict]:

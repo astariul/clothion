@@ -1220,3 +1220,31 @@ def test_filter_data_contains_only_basic(client):
 
     assert len(data) == 2
     assert all(x["choices"] == ["Opt1"] for x in data)
+
+
+def test_filter_data_or_condition_on_same_attribute(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_strings")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"filter": {"or": [{"sen": {"starts_with": "You"}}, {"sen": {"ends_with": "this"}}]}},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 3
+    assert all(x["sen"].startswith("You") or x["sen"].endswith("this") for x in data)
+
+
+def test_filter_data_or_condition_on_different_attributes(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"filter": {"or": [{"email": {"starts_with": "me5"}}, {"price": {"greater_than": 450}}]}},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 4
+    assert all(x["email"].startswith("me5") or x["price"] > 450 for x in data)

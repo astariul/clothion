@@ -5,7 +5,7 @@ from typing import Callable, Dict, Union
 
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import and_, not_, sql
+from sqlalchemy import and_, not_, or_, sql
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
@@ -459,7 +459,10 @@ def make_condition(  # noqa: C901
 
 
 def create_db_filter(  # noqa: C901
-    db: Session, table_id: int, filter: Dict[str, Dict] = None
+    db: Session,
+    table_id: int,
+    filter: Dict[str, Dict] = None,
+    db_element: models.Base = None,
 ) -> sql.selectable.Exists:
     """Take a filter descriptor (the thing sent by the user in his request) and
     turn it into a DB filter that can be used in the query to properly filter
@@ -470,6 +473,9 @@ def create_db_filter(  # noqa: C901
         table_id (int): ID of the Table from which to extract the data.
         filter (Dict[str, Dict], optional): Filter descriptor sent by the user.
             Defaults to None.
+        db_element (models.Base): If specified, one element from the DB for the
+            corresponding table (to avoid re-calling the DB to retrieve this
+            element). Just used when this function is called recursively.
 
     Raises:
         WrongFilter: Exception thrown when the filter descriptor is not valid.
@@ -482,9 +488,17 @@ def create_db_filter(  # noqa: C901
     db_elem_conditions = []
 
     # No filter, or if the table is empty, nothing to filter
-    db_element = last_table_element(db, table_id)
+    db_element = last_table_element(db, table_id) if db_element is None else db_element
     if filter is None or db_element is None:
         return None
+
+    # OR filter can only be at the root of the filter field
+    # Just create the filters for each clause and merge them with OR
+    if "or" in filter and isinstance(filter["or"], list):
+        filters = [
+            create_db_filter(db=db, table_id=table_id, filter=clause, db_element=db_element) for clause in filter["or"]
+        ]
+        return or_(*filters)
 
     # First, we need the schema for validating the filter
     db_attributes = {attr.name: attr for attr in db_element.attributes}
