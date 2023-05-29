@@ -465,6 +465,19 @@ def test_calculate_data_sum(client):
     assert data[0]["my_title"] is None
 
 
+def test_calculate_data_same_attribute_shoud_have_value(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"calculate": "sum"})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["price"] == 56.5 + 98 + -13
+    assert data[0]["my_title"] is None  # This one is None because each row has a different title
+    assert data[0]["opt"] == "same"  # This one is the value because all rows have the same value
+
+
 def test_data_wrong_parameters(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_data_sum")
 

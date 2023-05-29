@@ -655,6 +655,13 @@ class MockDBQuery:
             response.add_element(my_title=title("Elem3"), price=number(None), quantity=number(None))
             response.add_element(my_title=title("Elem4"), price=number(-13), quantity=number(3))
             return response.get()
+        elif database_id == "table_for_sum_without_none":
+            response = QueryResponse()
+            response.add_element(my_title=title("Elem1"), price=number(56.5), opt=select("same"))
+            response.add_element(my_title=title("Elem2"), price=number(98), opt=select("same"))
+            response.add_element(my_title=title("Elem3"), price=number(None), opt=select("same"))
+            response.add_element(my_title=title("Elem4"), price=number(-13), opt=select("same"))
+            return response.get()
         elif database_id == "table_for_general_data":
             response = QueryResponse()
             response.add_element(
