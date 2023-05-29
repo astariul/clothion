@@ -26,7 +26,7 @@ class Parameters(BaseModel):
     group_by: str = None
 
 
-def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) -> List[Dict]:
+def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) -> List[Dict]:  # noqa: C901
     """Helper function that takes care of extracting the DB data and convert it
     into JSON data.
 
@@ -75,7 +75,17 @@ def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) 
 
         data[attr.element_id][attr.name] = value
 
-    return list(data.values())
+    # If it's a group_by call, we need to return a dict (where keys are the possible
+    # values of the group_by attribute)
+    # If we aggregated the values with `calculate`, then return the single aggregated value
+    # If it's a regular request, just return the list of elements and their attributes
+    if parameters.group_by is not None:
+        return data
+    elif parameters.calculate is not None:
+        assert len(data) == 1, "Aggregation function used, but got more than one result"
+        return list(data.values())[0]
+    else:
+        return list(data.values())
 
 
 def get_data(db: Session, table: models.Table, parameters: Parameters) -> List[Dict]:

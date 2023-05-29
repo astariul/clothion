@@ -585,7 +585,16 @@ def create_base_db_query(db: Session, table_id: int, calculate: str = None, grou
     # Create a subquery for grouping by the right thing
     if group_by is not None:
         grouper = (
-            db.query(models.Attribute.element_id, models.Attribute.value_bool.label("group_id"))
+            db.query(
+                models.Attribute.element_id,
+                case(
+                    (models.Attribute.is_bool, models.Attribute.value_bool),
+                    (models.Attribute.is_date, models.Attribute.value_date),
+                    (models.Attribute.is_number, models.Attribute.value_number),
+                    (models.Attribute.is_string, models.Attribute.value_string),
+                    (models.Attribute.is_multistring, models.Attribute.value_string),
+                ).label("group_id"),
+            )
             .join(models.Element)
             .filter(models.Element.table_id == table_id, models.Attribute.name == group_by)
             .subquery()

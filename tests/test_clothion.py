@@ -459,10 +459,11 @@ def test_calculate_data_sum(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 1
-    assert data[0]["price"] == 56.5 + 98 + -13
-    assert data[0]["quantity"] == 3 + 0
-    assert data[0]["my_title"] is None
+    assert data == {
+        "price": 56.5 + 98 + -13,
+        "quantity": 3 + 0,
+        "my_title": None,
+    }
 
 
 def test_calculate_data_same_attribute_shoud_have_value(client):
@@ -472,10 +473,11 @@ def test_calculate_data_same_attribute_shoud_have_value(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 1
-    assert data[0]["price"] == 56.5 + 98 + -13
-    assert data[0]["my_title"] is None  # This one is None because each row has a different title
-    assert data[0]["opt"] == "same"  # This one is the value because all rows have the same value
+    assert data == {
+        "price": 56.5 + 98 + -13,
+        "my_title": None,  # This one is None because each row has a different title
+        "opt": "same",  # This one is the value because all rows have the same value
+    }
 
 
 def test_data_wrong_parameters(client):
@@ -492,10 +494,11 @@ def test_calculate_data_min(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 1
-    assert data[0]["price"] == -13
-    assert data[0]["quantity"] == 0
-    assert data[0]["my_title"] is None
+    assert data == {
+        "price": -13,
+        "quantity": 0,
+        "my_title": None,
+    }
 
 
 def test_calculate_data_max(client):
@@ -505,10 +508,11 @@ def test_calculate_data_max(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 1
-    assert data[0]["price"] == 98
-    assert data[0]["quantity"] == 3
-    assert data[0]["my_title"] is None
+    assert data == {
+        "price": 98,
+        "quantity": 3,
+        "my_title": None,
+    }
 
 
 def test_calculate_data_average(client):
@@ -518,10 +522,11 @@ def test_calculate_data_average(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 1
-    assert data[0]["price"] == (56.5 + 98 + -13) / 3
-    assert data[0]["quantity"] == (3 + 0) / 2
-    assert data[0]["my_title"] is None
+    assert data == {
+        "price": (56.5 + 98 + -13) / 3,
+        "quantity": (3 + 0) / 2,
+        "my_title": None,
+    }
 
 
 def test_calculate_data_count(client):
@@ -531,8 +536,14 @@ def test_calculate_data_count(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 1
-    assert {"my_title": 6, "email": 7, "price": 6, "day_of": 4, "ckbox": 8, "choices": 6} in data
+    assert data == {
+        "my_title": 6,
+        "email": 7,
+        "price": 6,
+        "day_of": 4,
+        "ckbox": 8,
+        "choices": 6,
+    }
 
 
 def test_calculate_data_unique_count(client):
@@ -542,8 +553,14 @@ def test_calculate_data_unique_count(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 1
-    assert {"my_title": 5, "email": 5, "price": 4, "day_of": 3, "ckbox": 2, "choices": 4} in data
+    assert data == {
+        "my_title": 5,
+        "email": 5,
+        "price": 4,
+        "day_of": 3,
+        "ckbox": 2,
+        "choices": 4,
+    }
 
 
 def test_filter_data_wrong_attribute_name(client):
@@ -1309,12 +1326,114 @@ def test_filter_data_group_by_bool(client):
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == 2
-    for x in data:
-        if x["ckbox"] is True:
-            assert x["price"] == -5
-        else:
-            assert x["price"] == 56.5 + 699 + 56.6 + 56.5 + 699
+    assert "0" in data and "1" in data
+    assert data["1"]["ckbox"] is True
+    assert data["1"]["price"] == -5
+    assert data["0"]["ckbox"] is False
+    assert data["0"]["price"] == 56.5 + 699 + 56.6 + 56.5 + 699
+
+
+def test_filter_data_group_by_date(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"calculate": "sum", "group_by": "day_of"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    d1 = str(no_timezone_date("2001-05-08T10:00:00.000+09:00")) + ".000000"
+    d2 = str(no_timezone_date("2023-05-08T10:00:00.000+09:00")) + ".000000"
+    d3 = str(no_timezone_date("2026-05-08T10:00:00.000+09:00")) + ".000000"
+    assert d1 in data and d2 in data and d3 in data and "null" in data
+    assert data[d1]["day_of"] == no_timezone_date("2001-05-08T10:00:00.000+09:00", as_str=True)
+    assert data[d1]["price"] == 56.5
+    assert data[d2]["day_of"] == no_timezone_date("2023-05-08T10:00:00.000+09:00", as_str=True)
+    assert data[d2]["price"] == 699 + 56.5
+    assert data[d3]["day_of"] == no_timezone_date("2026-05-08T10:00:00.000+09:00", as_str=True)
+    assert data[d3]["price"] is None
+    assert data["null"]["day_of"] is None
+    assert data["null"]["price"] == -5 + 699 + 56.6
+
+
+def test_filter_data_group_by_number(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"calculate": "count", "group_by": "price"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "56.5" in data and "-5.0" in data and "699.0" in data and "56.6" in data and "null" in data
+    assert data["56.5"]["price"] == 2
+    assert data["-5.0"]["price"] == 1
+    assert data["699.0"]["price"] == 2
+    assert data["56.6"]["price"] == 1
+    assert data["null"]["price"] == 0
+
+
+def test_filter_data_group_by_string(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"calculate": "sum", "group_by": "email"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert (
+        "me1@lol.com" in data
+        and "me3@lol.com" in data
+        and "me4@lol.com" in data
+        and "me5@lol.com" in data
+        and "me6@lol.com" in data
+        and "null" in data
+    )
+    assert data["me1@lol.com"]["email"] == "me1@lol.com"
+    assert data["me1@lol.com"]["price"] == 56.5
+    assert data["me3@lol.com"]["email"] == "me3@lol.com"
+    assert data["me3@lol.com"]["price"] == -5
+    assert data["me4@lol.com"]["email"] == "me4@lol.com"
+    assert data["me4@lol.com"]["price"] == 699
+    assert data["me5@lol.com"]["email"] == "me5@lol.com"
+    assert data["me5@lol.com"]["price"] == 56.5 + 699
+    assert data["me6@lol.com"]["email"] == "me6@lol.com"
+    assert data["me6@lol.com"]["price"] == 56.6
+    assert data["null"]["email"] is None
+    assert data["null"]["price"] is None
+
+
+def test_filter_data_group_by_multistring(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"calculate": "sum", "group_by": "choices"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert (
+        '["Opt1", "Opt2"]' in data
+        and '["Opt1"]' in data
+        and '["Opt2", "Opt1"]' in data
+        and '["Opt3"]' in data
+        and "null" in data
+    )
+    assert data['["Opt1", "Opt2"]']["choices"] == ["Opt1", "Opt2"]
+    assert data['["Opt1", "Opt2"]']["price"] == 56.5 + 56.5
+    assert data['["Opt1"]']["choices"] == ["Opt1"]
+    assert data['["Opt1"]']["price"] == 699 + 699
+    assert data['["Opt2", "Opt1"]']["choices"] == ["Opt2", "Opt1"]
+    assert data['["Opt2", "Opt1"]']["price"] == 56.6
+    assert data['["Opt3"]']["choices"] == ["Opt3"]
+    assert data['["Opt3"]']["price"] is None
+    assert data["null"]["choices"] is None
+    assert data["null"]["price"] == -5
 
 
 def test_filter_data_group_by_no_calculate(client):
