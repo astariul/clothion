@@ -745,26 +745,45 @@ class MockDBQuery:
             response.add_element(t=title("E8"), d=date((now + timedelta(days=34)).isoformat()))
             response.add_element(t=title("E9"), d=date((now + timedelta(days=985)).isoformat()))
             return response.get()
-        elif database_id == "table_with_dates_2":
+        elif database_id == "table_with_week_dates":
             response = QueryResponse()
-            # 1 element at the beginning / end of the current week / month / year
             now = datetime.now(timezone.utc)
             monday_morning = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0)
             sunday_evening = (monday_morning + timedelta(days=6)).replace(hour=23, minute=59, second=59)
+            before_monday_morning = monday_morning - timedelta(days=1)
+            after_sunday_evening = sunday_evening + timedelta(days=1)
+            response.add_element(t=title("E1"), d=date(monday_morning.isoformat()))
+            response.add_element(t=title("E2"), d=date(sunday_evening.isoformat()))
+            response.add_element(t=title("E3"), d=date(before_monday_morning.isoformat()))
+            response.add_element(t=title("E4"), d=date(after_sunday_evening.isoformat()))
+            return response.get()
+        elif database_id == "table_with_month_dates":
+            response = QueryResponse()
+            now = datetime.now(timezone.utc)
             first_of_the_month = now.replace(day=1, hour=0, minute=0, second=0)
             last_of_the_month = (now.replace(day=28) + timedelta(days=4)).replace(
                 day=1, hour=23, minute=59, second=59
             ) - timedelta(days=1)
+            before_first_of_the_month = first_of_the_month - timedelta(days=1)
+            after_last_of_the_month = last_of_the_month + timedelta(days=1)
+            response.add_element(t=title("E1"), d=date(first_of_the_month.isoformat()))
+            response.add_element(t=title("E2"), d=date(last_of_the_month.isoformat()))
+            response.add_element(t=title("E3"), d=date(before_first_of_the_month.isoformat()))
+            response.add_element(t=title("E4"), d=date(after_last_of_the_month.isoformat()))
+            return response.get()
+        elif database_id == "table_with_year_dates":
+            response = QueryResponse()
+            now = datetime.now(timezone.utc)
             jan_first = now.replace(month=1, day=1, hour=0, minute=0, second=0)
             dec_last = (jan_first + timedelta(days=365)).replace(day=1, hour=23, minute=59, second=59) - timedelta(
                 days=1
             )
-            response.add_element(t=title("E1"), d=date(monday_morning.isoformat()))
-            response.add_element(t=title("E2"), d=date(sunday_evening.isoformat()))
-            response.add_element(t=title("E3"), d=date(first_of_the_month.isoformat()))
-            response.add_element(t=title("E4"), d=date(last_of_the_month.isoformat()))
-            response.add_element(t=title("E5"), d=date(jan_first.isoformat()))
-            response.add_element(t=title("E6"), d=date(dec_last.isoformat()))
+            before_jan_first = jan_first - timedelta(days=1)
+            after_dec_last = dec_last + timedelta(days=1)
+            response.add_element(t=title("E1"), d=date(jan_first.isoformat()))
+            response.add_element(t=title("E2"), d=date(dec_last.isoformat()))
+            response.add_element(t=title("E3"), d=date(before_jan_first.isoformat()))
+            response.add_element(t=title("E4"), d=date(after_dec_last.isoformat()))
             return response.get()
         elif database_id == "empty_table":
             return QueryResponse().get()

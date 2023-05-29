@@ -5,8 +5,9 @@ from typing import Callable, Dict, Union
 
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import and_, not_, or_, sql
+from sqlalchemy import and_, case, not_, or_, sql
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.query import Query
 from sqlalchemy.sql import func
 
 from clothion.database import engine, models
@@ -542,57 +543,28 @@ def create_db_filter(  # noqa: C901
     return and_(*db_elem_conditions)
 
 
-def get_attributes_of_table(
-    db: Session, table_id: int, calculate: str = None, filter: Dict[str, Dict] = None, limit: int = 500
-):
-    if calculate in ["sum", "min", "max", "average"]:
-        fn = NUMBER_OP[calculate]
-        query = (
-            db.query(
-                models.Element.table_id.label("element_id"),
-                models.Attribute.id,
-                models.Attribute.name,
-                models.Attribute.value_bool,
-                models.Attribute.value_date,
-                fn(models.Attribute.value_number).label("value_number"),
-                models.Attribute.value_string,
-                models.Attribute.is_bool,
-                models.Attribute.is_date,
-                models.Attribute.is_number,
-                models.Attribute.is_string,
-                models.Attribute.is_multistring,
-            )
-            .filter(models.Attribute.is_number)
-            .group_by(models.Attribute.name)
-        )
-    elif calculate in ["count", "count_unique"]:
-        value_bool = models.Attribute.value_bool
-        value_date = models.Attribute.value_date
-        value_number = models.Attribute.value_number
-        value_string = models.Attribute.value_string
+def create_base_db_query(db: Session, table_id: int, calculate: str = None, group_by: str = None) -> Query:
+    """Take a calculate descriptor and a group_by descriptor (the argument sent
+    by the user in his request) and turn it into a DB query that will retrieve
+    the right results.
 
-        if calculate == "count_unique":
-            value_bool = value_bool.distinct()
-            value_date = value_date.distinct()
-            value_number = value_number.distinct()
-            value_string = value_string.distinct()
+    Args:
+        db (Session): DB Session to use for calling the DB.
+        table_id (int): ID of the Table from which to extract the data.
+        calculate (str): Descriptor sent by the user specifying which
+            aggregation function to use. Defaults to None.
+        group_by (str): Descriptor sent by the user specifying by which
+            attribute to group by results. Defaults to None.
 
-        query = db.query(
-            models.Attribute.element_id,
-            models.Attribute.id,
-            models.Attribute.name,
-            func.count(value_bool).label("value_bool"),
-            func.count(value_date).label("value_date"),
-            func.count(value_number).label("value_number"),
-            func.count(value_string).label("value_string"),
-            models.Attribute.is_bool,
-            models.Attribute.is_date,
-            models.Attribute.is_number,
-            models.Attribute.is_string,
-            models.Attribute.is_multistring,
-        ).group_by(models.Attribute.name)
-    else:
-        query = db.query(
+    Raises:
+        WrongFilter: Exception thrown when the descriptors are not valid.
+
+    Returns:
+        Query: The DB query to use.
+    """
+    if group_by is None and calculate is None:
+        # Nothing to do, return a query to retrieve all elements
+        return db.query(
             models.Attribute.element_id,
             models.Attribute.id,
             models.Attribute.name,
@@ -606,6 +578,98 @@ def get_attributes_of_table(
             models.Attribute.is_string,
             models.Attribute.is_multistring,
         )
+
+    if group_by is not None and calculate is None:
+        raise WrongFilter("Can't group_by if not aggregation function is given through `calculate`")
+
+    # Create a subquery for grouping by the right thing
+    if group_by is not None:
+        grouper = (
+            db.query(models.Attribute.element_id, models.Attribute.value_bool.label("group_id"))
+            .join(models.Element)
+            .filter(models.Element.table_id == table_id, models.Attribute.name == group_by)
+            .subquery()
+        )
+    else:
+        grouper = (
+            db.query(models.Attribute.element_id, models.Element.table_id.label("group_id"))
+            .join(models.Element)
+            .filter(models.Element.table_id == table_id)
+            .group_by(models.Attribute.element_id)
+            .subquery()
+        )
+
+    if calculate in ["sum", "min", "max", "average"]:
+        fn = NUMBER_OP[calculate]
+        return (
+            db.query(
+                grouper.c.group_id.label("element_id"),
+                models.Attribute.id,
+                models.Attribute.name,
+                case(
+                    (func.count(models.Attribute.value_bool.distinct()) == 1, models.Attribute.value_bool), else_=None
+                ).label("value_bool"),
+                case(
+                    (func.count(models.Attribute.value_date.distinct()) == 1, models.Attribute.value_date), else_=None
+                ).label("value_date"),
+                fn(models.Attribute.value_number).label("value_number"),
+                case(
+                    (func.count(models.Attribute.value_string.distinct()) == 1, models.Attribute.value_string),
+                    else_=None,
+                ).label("value_string"),
+                models.Attribute.is_bool,
+                models.Attribute.is_date,
+                models.Attribute.is_number,
+                models.Attribute.is_string,
+                models.Attribute.is_multistring,
+            )
+            .join(grouper, models.Attribute.element_id == grouper.c.element_id)
+            .group_by(models.Attribute.name, grouper.c.group_id)
+        )
+    elif calculate in ["count", "count_unique"]:
+        if calculate == "count":
+            value_bool = models.Attribute.value_bool
+            value_date = models.Attribute.value_date
+            value_number = models.Attribute.value_number
+            value_string = models.Attribute.value_string
+        elif calculate == "count_unique":
+            value_bool = models.Attribute.value_bool.distinct()
+            value_date = models.Attribute.value_date.distinct()
+            value_number = models.Attribute.value_number.distinct()
+            value_string = models.Attribute.value_string.distinct()
+
+        return (
+            db.query(
+                grouper.c.group_id.label("element_id"),
+                models.Attribute.id,
+                models.Attribute.name,
+                func.count(value_bool).label("value_bool"),
+                func.count(value_date).label("value_date"),
+                func.count(value_number).label("value_number"),
+                func.count(value_string).label("value_string"),
+                models.Attribute.is_bool,
+                models.Attribute.is_date,
+                models.Attribute.is_number,
+                models.Attribute.is_string,
+                models.Attribute.is_multistring,
+            )
+            .join(grouper, models.Attribute.element_id == grouper.c.element_id)
+            .group_by(models.Attribute.name, grouper.c.group_id)
+        )
+    else:
+        raise WrongFilter(f"Unknown calculate function : {calculate}")
+
+
+def get_attributes_of_table(
+    db: Session,
+    table_id: int,
+    calculate: str = None,
+    filter: Dict[str, Dict] = None,
+    group_by: str = None,
+    limit: int = 500,
+):
+    # Query the right thing (based on calculate & group_by)
+    query = create_base_db_query(db=db, table_id=table_id, calculate=calculate, group_by=group_by)
 
     # Create optional filters
     db_filter = create_db_filter(db, table_id, filter)

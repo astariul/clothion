@@ -460,7 +460,9 @@ def test_calculate_data_sum(client):
     data = response.json()
 
     assert len(data) == 1
-    assert {"price": 56.5 + 98 + -13, "quantity": 3 + 0} in data
+    assert data[0]["price"] == 56.5 + 98 + -13
+    assert data[0]["quantity"] == 3 + 0
+    assert data[0]["my_title"] is None
 
 
 def test_data_wrong_parameters(client):
@@ -478,7 +480,9 @@ def test_calculate_data_min(client):
     data = response.json()
 
     assert len(data) == 1
-    assert {"price": -13, "quantity": 0} in data
+    assert data[0]["price"] == -13
+    assert data[0]["quantity"] == 0
+    assert data[0]["my_title"] is None
 
 
 def test_calculate_data_max(client):
@@ -489,7 +493,9 @@ def test_calculate_data_max(client):
     data = response.json()
 
     assert len(data) == 1
-    assert {"price": 98, "quantity": 3} in data
+    assert data[0]["price"] == 98
+    assert data[0]["quantity"] == 3
+    assert data[0]["my_title"] is None
 
 
 def test_calculate_data_average(client):
@@ -500,7 +506,9 @@ def test_calculate_data_average(client):
     data = response.json()
 
     assert len(data) == 1
-    assert {"price": (56.5 + 98 + -13) / 3, "quantity": (3 + 0) / 2} in data
+    assert data[0]["price"] == (56.5 + 98 + -13) / 3
+    assert data[0]["quantity"] == (3 + 0) / 2
+    assert data[0]["my_title"] is None
 
 
 def test_calculate_data_count(client):
@@ -933,27 +941,45 @@ def test_filter_data_date_past_next_this_wrong_period(client, op, period):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("period, n_expected_results", [("week", 2), ("month", 4), ("year", 6)])
-def test_filter_data_date_this_basic(client, period, n_expected_results):
-    integration_id, table_id = create_table(client, "secret_token", "table_with_dates_2")
+def test_filter_data_date_this_week_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_week_dates")
 
-    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {"this": period}}})
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {"this": "week"}}})
     assert response.status_code == 200
     data = response.json()
 
-    assert len(data) == n_expected_results
-
+    assert len(data) == 2
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-    if period == "week":
-        start = today - relativedelta(days=today.weekday())
-        delta = relativedelta(weeks=1)
-    elif period == "month":
-        start = today.replace(day=1)
-        delta = relativedelta(months=1)
-    elif period == "year":
-        start = today.replace(month=1, day=1)
-        delta = relativedelta(years=1)
+    start = today - relativedelta(days=today.weekday())
+    delta = relativedelta(weeks=1)
+    assert all(start <= no_timezone_date(x["d"]) <= start + delta for x in data)
 
+
+def test_filter_data_date_this_month_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_month_dates")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {"this": "month"}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    start = today.replace(day=1)
+    delta = relativedelta(months=1)
+    assert all(start <= no_timezone_date(x["d"]) <= start + delta for x in data)
+
+
+def test_filter_data_date_this_year_basic(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_with_year_dates")
+
+    response = client.post(f"/{integration_id}/{table_id}/data", json={"filter": {"d": {"this": "year"}}})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    start = today.replace(month=1, day=1)
+    delta = relativedelta(years=1)
     assert all(start <= no_timezone_date(x["d"]) <= start + delta for x in data)
 
 
@@ -1256,5 +1282,43 @@ def test_filter_data_wrong_type_list_instead_of_dict(client):
     response = client.post(
         f"/{integration_id}/{table_id}/data",
         json={"filter": {"price": [{"greater_than": 450}]}},
+    )
+    assert response.status_code == 422
+
+
+def test_filter_data_group_by_bool(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"calculate": "sum", "group_by": "ckbox"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data) == 2
+    for x in data:
+        if x["ckbox"] is True:
+            assert x["price"] == -5
+        else:
+            assert x["price"] == 56.5 + 699 + 56.6 + 56.5 + 699
+
+
+def test_filter_data_group_by_no_calculate(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"group_by": "ckbox"},
+    )
+    assert response.status_code == 422
+
+
+def test_filter_data_calculate_unknown_fn(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_general_data")
+
+    response = client.post(
+        f"/{integration_id}/{table_id}/data",
+        json={"calculate": "multiplication"},
     )
     assert response.status_code == 422
