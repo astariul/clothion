@@ -6,7 +6,7 @@
             {% if title %}
                 <span class="relative top-0 px-6 pt-1 pb-2 font-medium rounded-b-lg bg-teal-600 text-gray-50">{{ title }}</span>
             {% endif %}
-            <p class="flex items-end justify-center mb-4 mt-4 font-bold">
+            <p class="flex items-end justify-center pt-4 {{'pb-1' if description else 'pb-4' }} font-bold">
                 <span class="text-6xl">{{ value }}</span>
                 {% if unit %}
                     <span class="text-4xl">{{ unit }}</span>
