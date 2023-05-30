@@ -7,6 +7,7 @@ import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydantic.error_wrappers import ValidationError
 from sqlalchemy.orm import Session
 
 from clothion import __version__, config, notion_cache
@@ -34,9 +35,18 @@ class PageNotFound(Exception):
     pass
 
 
+class Unprocessable(Exception):
+    pass
+
+
 @app.exception_handler(PageNotFound)
-async def http_exception_handler(request, exc):
+async def http_404_exception_handler(request, exc):
     return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
+
+
+@app.exception_handler(Unprocessable)
+async def http_422_exception_handler(request, exc):
+    return templates.TemplateResponse("422.html", {"request": request, "msg": str(exc)}, status_code=422)
 
 
 @app.get("/", tags=["HTML"], response_class=HTMLResponse)
@@ -158,6 +168,60 @@ def refresh(request: Request, req: ReqTable = Depends()):
     req.error_check_for_html()
 
     return templates.TemplateResponse("refresh.html", {"request": request})
+
+
+@table_router.get("/panel", tags=["HTML"], response_class=HTMLResponse)
+def panel(  # noqa: C901
+    request: Request,
+    calculate: str = "sum",
+    attribute: str = None,
+    unit: str = None,
+    title: str = None,
+    description: str = None,
+    is_integer: bool = False,
+    req: ReqTable = Depends(),
+    db: Session = Depends(get_db),
+):
+    # Ensure the table exists
+    req.error_check_for_html()
+
+    # Check given parameters
+    if attribute is None:
+        raise Unprocessable("You should specify which attribute to use with the query parameter `attribute`.")
+
+    # Create the proper parameters for the data call
+    try:
+        params = notion_cache.Parameters(calculate=calculate)
+    except ValidationError:
+        raise Unprocessable("Invalid calculate function.")
+
+    # Get the data
+    try:
+        data = notion_cache.get_data(db, req.db_table, params)
+    except notion_cache.APIResponseError:
+        raise Unprocessable("Error with the Notion API.")
+
+    # Extract the value to display
+    if attribute not in data:
+        raise Unprocessable(
+            f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
+            f"{list(data.keys())}."
+        )
+
+    value = data[attribute]
+
+    if value is None:
+        raise Unprocessable(f"Please ensure `{attribute}` is a number, the operation returned `None`.")
+
+    if is_integer:
+        try:
+            value = int(value)
+        except ValueError:
+            raise Unprocessable(f"Value (`{value}`) can't be converted to an integer.")
+
+    return templates.TemplateResponse(
+        "panel.html", {"value": value, "unit": unit, "title": title, "description": description, "request": request}
+    )
 
 
 app.include_router(table_router)
