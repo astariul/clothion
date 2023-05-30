@@ -5,6 +5,7 @@ from typing import Annotated
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Form, HTTPException, Request
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic.error_wrappers import ValidationError
@@ -31,22 +32,24 @@ def get_db():
         db.close()
 
 
-class PageNotFound(Exception):
-    pass
+class APIException(Exception):
+    def __init__(self, status_code: int, detail: str = None):
+        self.status_code = status_code
+        self.detail = detail
 
 
-class Unprocessable(Exception):
-    pass
+@app.exception_handler(APIException)
+async def api_exception_handler(request, exc):
+    return await http_exception_handler(request, HTTPException(status_code=exc.status_code, detail=exc.detail))
 
 
-@app.exception_handler(PageNotFound)
-async def http_404_exception_handler(request, exc):
-    return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
-
-
-@app.exception_handler(Unprocessable)
-async def http_422_exception_handler(request, exc):
-    return templates.TemplateResponse("422.html", {"request": request, "msg": str(exc)}, status_code=422)
+@app.exception_handler(HTTPException)
+async def browser_exception_handler(request, exc):
+    return templates.TemplateResponse(
+        "error.html",
+        {"status_code": exc.status_code, "msg": exc.detail, "request": request},
+        status_code=exc.status_code,
+    )
 
 
 @app.get("/", tags=["HTML"], response_class=HTMLResponse)
@@ -103,12 +106,12 @@ class ReqTable:
     def error_check_for_html(self):
         # Ensure the table we seek exists
         if self.integration_id is None or self.table_id is None or self.db_table is None:
-            raise PageNotFound()
+            raise HTTPException(status_code=404, detail="Sorry, we couldn't find this page.")
 
     def error_check_for_api(self):
         # Ensure the table we seek exists
         if self.integration_id is None or self.table_id is None or self.db_table is None:
-            raise HTTPException(status_code=404)
+            raise APIException(status_code=404)
 
 
 table_router = APIRouter(
@@ -137,15 +140,15 @@ def data(
     try:
         return notion_cache.get_data(db, req.db_table, parameters)
     except notion_cache.APIResponseError:
-        raise HTTPException(status_code=422, detail="Error with the Notion API")
+        raise APIException(status_code=422, detail="Error with the Notion API")
     except notion_cache.TooMuchAttributes:
-        raise HTTPException(
+        raise APIException(
             status_code=413,
             detail=f"Your data contains more than {notion_cache.MAX_ATTRIBUTES} attributes. Clothion has a limit on "
             "the amount of data it can answer with, please use filters to retrieve only the data you need.",
         )
     except crud.WrongFilter as e:
-        raise HTTPException(
+        raise APIException(
             status_code=422,
             detail=f"Error with the `filter` argument : {str(e)}",
         )
@@ -159,7 +162,7 @@ def schema(req: ReqTable = Depends(), db: Session = Depends(get_db)):
     try:
         return notion_cache.get_schema(db, req.db_table)
     except notion_cache.APIResponseError:
-        raise HTTPException(status_code=422, detail="Error with the Notion API")
+        raise APIException(status_code=422, detail="Error with the Notion API")
 
 
 @table_router.get("/refresh", tags=["HTML"], response_class=HTMLResponse)
@@ -187,37 +190,42 @@ def panel(  # noqa: C901
 
     # Check given parameters
     if attribute is None:
-        raise Unprocessable("You should specify which attribute to use with the query parameter `attribute`.")
+        raise HTTPException(
+            status_code=422, detail="You should specify which attribute to use with the query parameter `attribute`."
+        )
 
     # Create the proper parameters for the data call
     try:
         params = notion_cache.Parameters(calculate=calculate)
     except ValidationError:
-        raise Unprocessable("Invalid calculate function.")
+        raise HTTPException(status_code=422, detail="Invalid calculate function.")
 
     # Get the data
     try:
         data = notion_cache.get_data(db, req.db_table, params)
     except notion_cache.APIResponseError:
-        raise Unprocessable("Error with the Notion API.")
+        raise HTTPException(status_code=422, detail="Error with the Notion API.")
 
     # Extract the value to display
     if attribute not in data:
-        raise Unprocessable(
-            f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
-            f"{list(data.keys())}."
+        raise HTTPException(
+            status_code=422,
+            detail=f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
+            f"{list(data.keys())}.",
         )
 
     value = data[attribute]
 
     if value is None:
-        raise Unprocessable(f"Please ensure `{attribute}` is a number, the operation returned `None`.")
+        raise HTTPException(
+            status_code=422, detail=f"Please ensure `{attribute}` is a number, the operation returned `None`."
+        )
 
     if is_integer:
         try:
             value = int(value)
         except ValueError:
-            raise Unprocessable(f"Value (`{value}`) can't be converted to an integer.")
+            raise HTTPException(status_code=422, detail=f"Value (`{value}`) can't be converted to an integer.")
 
     return templates.TemplateResponse(
         "panel.html", {"value": value, "unit": unit, "title": title, "description": description, "request": request}
@@ -225,6 +233,11 @@ def panel(  # noqa: C901
 
 
 app.include_router(table_router)
+
+
+@app.route("/{full_path:path}")
+async def unknown_path(request: Request):
+    raise HTTPException(status_code=404, detail="Sorry, we couldn't find this page.")
 
 
 def serve():

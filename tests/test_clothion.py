@@ -48,6 +48,12 @@ def test_home_route(client):
     assert response.template.name == "welcome.html"
 
 
+def test_unknown_route(client):
+    response = client.get("/wtf")
+    assert response.status_code == 404
+    assert response.template.name == "error.html"
+
+
 def test_favion(client):
     response = client.get("/favicon.ico")
     assert response.status_code == 200
@@ -133,13 +139,13 @@ def test_create_new_integration_existing_table(client):
 def test_access_inexisting_resource(client):
     response = client.get("/000000/000000")
     assert response.status_code == 404
-    assert response.template.name == "404.html"
+    assert response.template.name == "error.html"
 
 
 def test_access_wrong_b64_resource(client):
     response = client.get("/1/1")
     assert response.status_code == 404
-    assert response.template.name == "404.html"
+    assert response.template.name == "error.html"
 
 
 def test_access_data_of_freshly_created_table(client):
@@ -443,13 +449,13 @@ def test_refresh_page(client):
 def test_access_inexisting_refresh(client):
     response = client.get("/000000/000000/refresh")
     assert response.status_code == 404
-    assert response.template.name == "404.html"
+    assert response.template.name == "error.html"
 
 
 def test_access_wrong_b64_refresh(client):
     response = client.get("/1/1/refresh")
     assert response.status_code == 404
-    assert response.template.name == "404.html"
+    assert response.template.name == "error.html"
 
 
 def test_calculate_data_sum(client):
@@ -1461,7 +1467,7 @@ def test_panel_route_no_attribute_specified(client):
 
     response = client.get(f"/{integration_id}/{table_id}/panel")
     assert response.status_code == 422
-    assert response.template.name == "422.html"
+    assert response.template.name == "error.html"
 
 
 def test_panel_route_invalid_calculate_function(client):
@@ -1471,7 +1477,7 @@ def test_panel_route_invalid_calculate_function(client):
         f"/{integration_id}/{table_id}/panel", params={"attribute": "price", "calculate": "multiplication"}
     )
     assert response.status_code == 422
-    assert response.template.name == "422.html"
+    assert response.template.name == "error.html"
 
 
 def test_panel_route_wrong_attribute_specified(client):
@@ -1479,7 +1485,7 @@ def test_panel_route_wrong_attribute_specified(client):
 
     response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "pprice"})
     assert response.status_code == 422
-    assert response.template.name == "422.html"
+    assert response.template.name == "error.html"
 
 
 def test_panel_route_result_is_none(client):
@@ -1487,7 +1493,7 @@ def test_panel_route_result_is_none(client):
 
     response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "my_title"})
     assert response.status_code == 422
-    assert response.template.name == "422.html"
+    assert response.template.name == "error.html"
 
 
 def test_panel_route_result_is_not_an_integer(client):
@@ -1495,7 +1501,7 @@ def test_panel_route_result_is_not_an_integer(client):
 
     response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "opt", "is_integer": True})
     assert response.status_code == 422
-    assert response.template.name == "422.html"
+    assert response.template.name == "error.html"
 
 
 def test_panel_route_error_with_notion_api(client):
@@ -1503,7 +1509,7 @@ def test_panel_route_error_with_notion_api(client):
 
     response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "opt"})
     assert response.status_code == 422
-    assert response.template.name == "422.html"
+    assert response.template.name == "error.html"
 
 
 @pytest.mark.parametrize("calculate_kwargs", [{}, {"calculate": "max"}])
