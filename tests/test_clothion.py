@@ -1454,3 +1454,82 @@ def test_filter_data_calculate_unknown_fn(client):
         json={"calculate": "multiplication"},
     )
     assert response.status_code == 422
+
+
+def test_panel_route_no_attribute_specified(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/panel")
+    assert response.status_code == 422
+    assert response.template.name == "422.html"
+
+
+def test_panel_route_invalid_calculate_function(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(
+        f"/{integration_id}/{table_id}/panel", params={"attribute": "price", "calculate": "multiplication"}
+    )
+    assert response.status_code == 422
+    assert response.template.name == "422.html"
+
+
+def test_panel_route_wrong_attribute_specified(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "pprice"})
+    assert response.status_code == 422
+    assert response.template.name == "422.html"
+
+
+def test_panel_route_result_is_none(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "my_title"})
+    assert response.status_code == 422
+    assert response.template.name == "422.html"
+
+
+def test_panel_route_result_is_not_an_integer(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "opt", "is_integer": True})
+    assert response.status_code == 422
+    assert response.template.name == "422.html"
+
+
+def test_panel_route_error_with_notion_api(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_api_error")
+
+    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "opt"})
+    assert response.status_code == 422
+    assert response.template.name == "422.html"
+
+
+@pytest.mark.parametrize("calculate_kwargs", [{}, {"calculate": "max"}])
+@pytest.mark.parametrize("unit_kwargs", [{}, {"unit": "$"}])
+@pytest.mark.parametrize("title_kwargs", [{}, {"title": "Total"}])
+@pytest.mark.parametrize("description_kwargs", [{}, {"description": "This is my money"}])
+@pytest.mark.parametrize("is_integer_kwargs", [{}, {"is_integer": True}])
+def test_panel_route_valid_number(
+    client, calculate_kwargs, unit_kwargs, title_kwargs, description_kwargs, is_integer_kwargs
+):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    kwargs = {**calculate_kwargs, **unit_kwargs, **title_kwargs, **description_kwargs, **is_integer_kwargs}
+    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "price", **kwargs})
+    assert response.status_code == 200
+    assert response.template.name == "panel.html"
+
+
+@pytest.mark.parametrize("calculate_kwargs", [{}, {"calculate": "max"}])
+@pytest.mark.parametrize("unit_kwargs", [{}, {"unit": "$"}])
+@pytest.mark.parametrize("title_kwargs", [{}, {"title": "Total"}])
+@pytest.mark.parametrize("description_kwargs", [{}, {"description": "This is my money"}])
+def test_panel_route_valid_not_number(client, calculate_kwargs, unit_kwargs, title_kwargs, description_kwargs):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    kwargs = {**calculate_kwargs, **unit_kwargs, **title_kwargs, **description_kwargs}
+    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "opt", **kwargs})
+    assert response.status_code == 200
+    assert response.template.name == "panel.html"

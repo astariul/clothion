@@ -513,6 +513,7 @@ class MockDBQuery:
         # By default, the first call retrieve all the data and other calls are
         # empty (because already cached in the DB)
         if N_CALLS[database_id] > 1 and database_id not in [
+            "table_api_error",
             "table_filter_call_new_data",
             "table_filter_call_updated_data",
             "table_filter_call_crash_normal_call_updates",
