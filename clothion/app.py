@@ -182,6 +182,7 @@ def panel(  # noqa: C901
     title: str = None,
     description: str = None,
     is_integer: bool = False,
+    update_cache: bool = True,
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
 ):
@@ -196,7 +197,7 @@ def panel(  # noqa: C901
 
     # Create the proper parameters for the data call
     try:
-        params = notion_cache.Parameters(calculate=calculate)
+        params = notion_cache.Parameters(calculate=calculate, update_cache=update_cache)
     except ValidationError:
         raise HTTPException(status_code=422, detail="Invalid calculate function.")
 
