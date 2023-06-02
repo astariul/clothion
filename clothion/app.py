@@ -173,6 +173,23 @@ def refresh(request: Request, req: ReqTable = Depends()):
     return templates.TemplateResponse("refresh.html", {"request": request})
 
 
+@table_router.get("/build", tags=["HTML"], response_class=HTMLResponse)
+def build_integration(  # noqa: C901
+    request: Request,
+    req: ReqTable = Depends(),
+    db: Session = Depends(get_db),
+):
+    # Ensure the table exists
+    req.error_check_for_html()
+
+    try:
+        schema = notion_cache.get_schema(db, req.db_table)
+    except notion_cache.APIResponseError:
+        raise HTTPException(status_code=422, detail="Error with the Notion API.")
+
+    return templates.TemplateResponse("build.html", {"schema": schema, "request": request})
+
+
 @table_router.get("/panel", tags=["HTML"], response_class=HTMLResponse)
 def panel(  # noqa: C901
     request: Request,
