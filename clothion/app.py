@@ -121,11 +121,16 @@ table_router = APIRouter(
 
 
 @table_router.get("/", tags=["HTML"], response_class=HTMLResponse)
-def widget(request: Request, req: ReqTable = Depends()):
+def build_integration(request: Request, req: ReqTable = Depends(), db: Session = Depends(get_db)):
     # Ensure the table exists
     req.error_check_for_html()
 
-    return templates.TemplateResponse("widget.html", {"request": request})
+    try:
+        schema = notion_cache.get_schema(db, req.db_table)
+    except notion_cache.APIResponseError:
+        raise HTTPException(status_code=422, detail="Error with the Notion API.")
+
+    return templates.TemplateResponse("build.html", {"schema": schema, "request": request})
 
 
 @table_router.post("/data", tags=["API"])
@@ -171,23 +176,6 @@ def refresh(request: Request, req: ReqTable = Depends()):
     req.error_check_for_html()
 
     return templates.TemplateResponse("refresh.html", {"request": request})
-
-
-@table_router.get("/build", tags=["HTML"], response_class=HTMLResponse)
-def build_integration(  # noqa: C901
-    request: Request,
-    req: ReqTable = Depends(),
-    db: Session = Depends(get_db),
-):
-    # Ensure the table exists
-    req.error_check_for_html()
-
-    try:
-        schema = notion_cache.get_schema(db, req.db_table)
-    except notion_cache.APIResponseError:
-        raise HTTPException(status_code=422, detail="Error with the Notion API.")
-
-    return templates.TemplateResponse("build.html", {"schema": schema, "request": request})
 
 
 @table_router.get("/panel", tags=["HTML"], response_class=HTMLResponse)

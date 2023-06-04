@@ -806,7 +806,9 @@ class MockDBQuery:
             raise KeyError(f"{database_id} table query not implemented in Mock...")
 
     def retrieve(self, database_id: str):
-        if database_id == "table_schema_full_data":
+        if database_id == "table_schema_full_data" or database_id in ["id#1", "id#2", "id#3", "id#3-2", "id#4"]:
+            # For tables id#1, id#2, id#3, id#4, the `create` route redirects to the page for widget creation,
+            # which uses the Notion API to get the schema. So return a schema to avoid failing the test
             return RetrieveResponse().get()
         elif database_id == "table_with_basic_data":
             raise RuntimeError

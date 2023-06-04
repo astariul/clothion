@@ -18,9 +18,9 @@ def create_table(client: TestClient, token: str, table_id: str) -> Tuple[str, st
         Tuple[str, str]: the resulting path identifiers (integration & table).
     """
     form_data = {"integration": token, "table": table_id}
-    response = client.post("/create", data=form_data)
-    assert response.status_code == 200
-    integration_id, table_id = response.url.path.strip("/").split("/")
+    response = client.post("/create", data=form_data, allow_redirects=False)
+    assert response.status_code == 301
+    integration_id, table_id = response.headers["location"].strip("/").split("/")
     return (integration_id, table_id)
 
 
