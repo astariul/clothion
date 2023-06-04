@@ -73,6 +73,7 @@ def test_create_new_integration_new_table(client):
     assert len(response.history) == 1
     assert response.history[0].status_code == 301
     assert response.status_code == 200
+    assert response.template.name == "build.html"
 
     # The redirected resource path has both the integration ID and the table ID, base64-encoded
     url_parts = response.url.path.strip("/").split("/")
