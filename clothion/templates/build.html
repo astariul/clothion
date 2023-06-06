@@ -64,7 +64,7 @@
 			<path d="M16 11l-2 2"></path>
 		</svg>
 	{% endif %}
-	<span>{{ name }}</span>
+	<span class="text-gray-800">{{ name }}</span>
 {% endmacro %}
 {% set keys = schema.keys() | list %}
 {% set values = schema.values() | list %}
@@ -89,7 +89,7 @@
 				<label for="attribute" class="block mb-2 text-sm">Attribute</label>
 				<div id="attribute" class="relative block text-left">
 					<div>
-						<button type="button" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="menu-button" aria-expanded="false" aria-haspopup="true">
+						<button type="button" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="attribute_selector_btn" aria-expanded="false" aria-haspopup="true">
 							<div id="selected_attribute" class="text-left flex items-center space-x-1">
 								{{ table_attribute(default_attr_name, default_attr_type) }}
 							</div>
@@ -98,7 +98,7 @@
 							</svg>
 						</button>
 					</div>
-					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1" id="dropdown-menu">
+					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="attribute_selector_btn" tabindex="-1" id="attribute_selector_choices">
 						<div class="py-1" role="none">
 							{% for attribute, type in schema.items() %}
 								<button type="button" onclick="select_option(this, 'selected_attribute')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
@@ -157,22 +157,22 @@
 {% block script %}
 <script>
 	// Get the menu button and dropdown menu elements
-	const menuButton = document.getElementById('menu-button');
-	const dropdownMenu = document.getElementById('dropdown-menu');
+	const menuButton = document.getElementById("attribute_selector_btn");
+	const dropdownMenu = document.getElementById("attribute_selector_choices");
 
 	// Toggle the dropdown menu when the button is clicked
-	menuButton.addEventListener('click', () => {
-		const expanded = menuButton.getAttribute('aria-expanded') === 'true';
-		menuButton.setAttribute('aria-expanded', !expanded);
-		dropdownMenu.classList.toggle('hidden');
+	menuButton.addEventListener("click", () => {
+		const expanded = menuButton.getAttribute("aria-expanded") === "true";
+		menuButton.setAttribute("aria-expanded", !expanded);
+		dropdownMenu.classList.toggle("hidden");
 	});
 
 	// Close the dropdown menu when clicking outside of it
-	document.addEventListener('click', (event) => {
+	document.addEventListener("click", (event) => {
 		const targetElement = event.target;
 		if (!dropdownMenu.contains(targetElement) && !menuButton.contains(targetElement)) {
-			menuButton.setAttribute('aria-expanded', 'false');
-			dropdownMenu.classList.add('hidden');
+			menuButton.setAttribute("aria-expanded", "false");
+			dropdownMenu.classList.add("hidden");
 		}
 	});
 
@@ -181,8 +181,8 @@
 		elem.innerHTML = selection.innerHTML;
 
 		// Leave the dropdown
-		menuButton.setAttribute('aria-expanded', 'false');
-		dropdownMenu.classList.add('hidden');
+		menuButton.setAttribute("aria-expanded", "false");
+		dropdownMenu.classList.add("hidden");
 	}
 
 	function generate_link() {
@@ -197,8 +197,8 @@
 		var description = document.getElementById("description").value;
 
 		// Build the embed URL
-		const root_url = window.location.href.split('/').slice(0, -1).join('/');
-		const panel_url = root_url + '/panel';
+		const root_url = window.location.href.split("/").slice(0, -1).join("/");
+		const panel_url = root_url + "/panel";
 		var embed_url = `${root_url}/panel?calculate=${encodeURIComponent(calculate)}&attribute=${encodeURIComponent(attribute)}&is_integer=${encodeURIComponent(!allow_decimal)}`;
 		if (unit) {
 			embed_url = `${embed_url}&unit=${encodeURIComponent(unit)}`;
