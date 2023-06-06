@@ -88,7 +88,7 @@
 							</svg>
 						</button>
 					</div>
-					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="calculate_selector_btn" tabindex="-1" id="calculate_selector_choices">
+					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-gray-50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="calculate_selector_btn" tabindex="-1" id="calculate_selector_choices">
 						<div class="py-1" role="none">
 							{% for op in operations %}
 								<button type="button" onclick="select_option(this, 'selected_operation', 'calculate_selector_btn', 'calculate_selector_choices')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
@@ -112,7 +112,7 @@
 							</svg>
 						</button>
 					</div>
-					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="attribute_selector_btn" tabindex="-1" id="attribute_selector_choices">
+					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-gray-50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="attribute_selector_btn" tabindex="-1" id="attribute_selector_choices">
 						<div class="py-1" role="none">
 							{% for attribute, type in schema.items() %}
 								<button type="button" onclick="select_option(this, 'selected_attribute', 'attribute_selector_btn', 'attribute_selector_choices')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
