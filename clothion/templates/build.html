@@ -1,4 +1,75 @@
 {%  extends 'base.html' %}
+{% macro table_attribute(name, type) %}
+	{% if type in ["title", "rich_text", "text", "url", "email", "phone_number"] %}
+		<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-align-justified" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+			<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+			<path d="M4 6l16 0"></path>
+			<path d="M4 12l16 0"></path>
+			<path d="M4 18l12 0"></path>
+		</svg>
+	{% elif type == "number" %}
+		<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-123" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+			<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+			<path d="M3 10l2 -2v8"></path>
+			<path d="M9 8h3a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 0 -1 1v2a1 1 0 0 0 1 1h3"></path>
+			<path d="M17 8h2.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-1.5h1.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-2.5"></path>
+		</svg>
+	{% elif type in ["select", "multi_select", "status"] %}
+		<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-selector" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+			<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+			<path d="M8 9l4 -4l4 4"></path>
+			<path d="M16 15l-4 4l-4 -4"></path>
+		</svg>
+	{% elif type in ["date", "created_time", "last_edited_time"] %}
+		<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+			<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+			<path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"></path>
+			<path d="M16 3v4"></path>
+			<path d="M8 3v4"></path>
+			<path d="M4 11h16"></path>
+			<path d="M11 15h1"></path>
+			<path d="M12 15v3"></path>
+		</svg>
+	{% elif type in ["people", "created_by", "last_edited_by"] %}
+		<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+			<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+			<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path>
+			<path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path>
+		</svg>
+	{% elif type in ["files", "file"] %}
+		<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-paperclip" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+			<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+			<path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"></path>
+		</svg>
+	{% elif type == "checkbox" %}
+		<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-checkbox" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+			<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+			<path d="M9 11l3 3l8 -8"></path>
+			<path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9"></path>
+		</svg>
+	{% elif type == "formula" %}
+		<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-math-function" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+			<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+			<path d="M3 19a2 2 0 0 0 2 2c2 0 2 -4 3 -9s1 -9 3 -9a2 2 0 0 1 2 2"></path>
+			<path d="M5 12h6"></path>
+			<path d="M15 12l6 6"></path>
+			<path d="M15 18l6 -6"></path>
+		</svg>
+	{% else %}
+		<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-alien" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#b8b8b8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+			<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+			<path d="M11 17a2.5 2.5 0 0 0 2 0"></path>
+			<path d="M12 3c-4.664 0 -7.396 2.331 -7.862 5.595a11.816 11.816 0 0 0 2 8.592a10.777 10.777 0 0 0 3.199 3.064c1.666 1 3.664 1 5.33 0a10.777 10.777 0 0 0 3.199 -3.064a11.89 11.89 0 0 0 2 -8.592c-.466 -3.265 -3.198 -5.595 -7.862 -5.595z"></path>
+			<path d="M8 11l2 2"></path>
+			<path d="M16 11l-2 2"></path>
+		</svg>
+	{% endif %}
+	<span>{{ name }}</span>
+{% endmacro %}
+{% set keys = schema.keys() | list %}
+{% set values = schema.values() | list %}
+{% set default_attr_name = keys[0] %}
+{% set default_attr_type = values[0] %}
 {% block content %}
 <div class="flex flex-col max-w-md p-6 rounded-md sm:p-10 bg-gray-50 text-gray-800">
 	<form novalidate="" onsubmit="return generate_link();" class="space-y-8 ng-untouched ng-pristine ng-valid" data-bitwarden-watching="1">
@@ -16,11 +87,27 @@
 			</div>
 			<div>
 				<label for="attribute" class="block mb-2 text-sm">Attribute</label>
-				<select id="attribute" class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800 focus:ring-teal-500 focus:border-teal-500">
-					{% for name, type in schema.items() %}
-						<option value="{{ name }}">{{ name }}</option>
-					{% endfor %}
-				</select>
+				<div id="attribute" class="relative block text-left">
+					<div>
+						<button type="button" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="menu-button" aria-expanded="false" aria-haspopup="true">
+							<div id="selected_attribute" class="text-left flex items-center space-x-1">
+								{{ table_attribute(default_attr_name, default_attr_type) }}
+							</div>
+							<svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+							</svg>
+						</button>
+					</div>
+					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1" id="dropdown-menu">
+						<div class="py-1" role="none">
+							{% for attribute, type in schema.items() %}
+								<button type="button" onclick="select_option(this, 'selected_attribute')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
+									{{ table_attribute(attribute, type) }}
+								</button>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
 			</div>
 			<div>
 				<label for="allow_decimal" class="inline-flex items-center space-x-4 cursor-pointer text-gray-800">
@@ -69,12 +156,41 @@
 {% endblock %}
 {% block script %}
 <script>
+	// Get the menu button and dropdown menu elements
+	const menuButton = document.getElementById('menu-button');
+	const dropdownMenu = document.getElementById('dropdown-menu');
+
+	// Toggle the dropdown menu when the button is clicked
+	menuButton.addEventListener('click', () => {
+		const expanded = menuButton.getAttribute('aria-expanded') === 'true';
+		menuButton.setAttribute('aria-expanded', !expanded);
+		dropdownMenu.classList.toggle('hidden');
+	});
+
+	// Close the dropdown menu when clicking outside of it
+	document.addEventListener('click', (event) => {
+		const targetElement = event.target;
+		if (!dropdownMenu.contains(targetElement) && !menuButton.contains(targetElement)) {
+			menuButton.setAttribute('aria-expanded', 'false');
+			dropdownMenu.classList.add('hidden');
+		}
+	});
+
+	function select_option(selection, id_to_change) {
+		const elem = document.getElementById(id_to_change);
+		elem.innerHTML = selection.innerHTML;
+
+		// Leave the dropdown
+		menuButton.setAttribute('aria-expanded', 'false');
+		dropdownMenu.classList.add('hidden');
+	}
+
 	function generate_link() {
 		document.getElementById("urldiv").classList.remove("invisible");
 
 		// Retrieve the form's values
 		var calculate = document.getElementById("calculate").value;
-		var attribute = document.getElementById("attribute").value;
+		var attribute = document.getElementById("selected_attribute").textContent.trim();
 		var allow_decimal = document.getElementById("allow_decimal").checked;
 		var unit = document.getElementById("unit").value;
 		var title = document.getElementById("title").value;
