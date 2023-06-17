@@ -1,4 +1,4 @@
-"""Remove StringParts, add it into the Attribute table as JSON
+"""Remove StringParts, add it into the Attribute table as JSON.
 
 Revision ID: 6fe427cd07c7
 Revises: 6f28391b3a2d

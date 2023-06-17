@@ -1,3 +1,4 @@
+"""Main file, where the FastAPI application and all the routes are declared."""
 import binascii
 import pathlib
 from base64 import urlsafe_b64decode, urlsafe_b64encode
@@ -24,7 +25,12 @@ app = FastAPI(title="Clothion", version=__version__, redoc_url=None)
 templates = Jinja2Templates(directory=pathlib.Path(__file__).parent / "templates")
 
 
-def get_db():
+def get_db() -> SessionLocal:
+    """FastAPI dependency to create a DB Session.
+
+    Yields:
+        SessionLocal: DB Session.
+    """
     db = SessionLocal()
     try:
         yield db
@@ -33,6 +39,15 @@ def get_db():
 
 
 class APIException(Exception):
+    """Exception raised by the API part of the server, to differentiate from
+    HTML exception (which by default return a webpage, but for the API we want
+    to return some JSON content).
+
+    Args:
+        status_code (int): HTTP code to return.
+        detail (str, optional): Error description. Defaults to `None`.
+    """
+
     def __init__(self, status_code: int, detail: str = None):
         self.status_code = status_code
         self.detail = detail
@@ -40,11 +55,13 @@ class APIException(Exception):
 
 @app.exception_handler(APIException)
 async def api_exception_handler(request, exc):
+    """Define the exception handler for API exceptions."""
     return await http_exception_handler(request, HTTPException(status_code=exc.status_code, detail=exc.detail))
 
 
 @app.exception_handler(HTTPException)
 async def browser_exception_handler(request, exc):
+    """Define the exception handler for HTML exceptions."""
     return templates.TemplateResponse(
         "error.html",
         {"status_code": exc.status_code, "msg": exc.detail, "request": request},
@@ -54,21 +71,40 @@ async def browser_exception_handler(request, exc):
 
 @app.get("/", tags=["HTML"], response_class=HTMLResponse)
 async def welcome(request: Request):
+    """Main route, sending the page for table registration."""
     return templates.TemplateResponse("welcome.html", {"request": request})
 
 
 @app.get("/favicon.ico", tags=["HTML"], include_in_schema=False)
 async def favicon():
+    """Favicon."""
     return FileResponse(pathlib.Path(__file__).parent / "templates" / "logo.svg")
 
 
 @app.get("/version", tags=["API"])
 async def version() -> str:
+    """Returns the current `clothion` version."""
     return __version__
 
 
 @app.post("/create", tags=["Forms"])
-def create(integration: Annotated[str, Form()], table: Annotated[str, Form()], db: Session = Depends(get_db)):
+def create(
+    integration: Annotated[str, Form()], table: Annotated[str, Form()], db: Session = Depends(get_db)
+) -> RedirectResponse:
+    """Route to register an integration and a table. Will be called from the
+    form of the welcome page.
+
+    If the registration is successful, the user is redirected to the
+    integration home page.
+
+    Args:
+        integration (Annotated[str, Form]): The integration token to register.
+        table (Annotated[str, Form]): The table ID (from Notion) to register.
+        db (Session, optional): DB session. Defaults to `Depends(get_db)`.
+
+    Returns:
+        RedirectResponse: Redirection.
+    """
     db_integration = crud.get_integration_by_token(db, token=integration)
     if not db_integration:
         # If the Integration doesn't exist, create it and create the table directly
@@ -90,6 +126,16 @@ def create(integration: Annotated[str, Form()], table: Annotated[str, Form()], d
 
 
 class ReqTable:
+    """For all the routes based on a specific table (like `/xxxx/xxxx`), we
+    need to retrieve the proper table from the DB. This class takes care of
+    parsing the base64 and retrieving the data from the DB.
+
+    Args:
+        integration_b64 (str): Base64 encoding of the integration ID.
+        table_b64 (str): Base64 encoding of the table ID.
+        db (Session, optional): DB session. Defaults to `Depends(get_db)`.
+    """
+
     def __init__(self, integration_b64: str, table_b64: str, db: Session = Depends(get_db)):
         self.db = db
 
@@ -104,11 +150,23 @@ class ReqTable:
             self.db_table = crud.get_table(db=self.db, integration_id=self.integration_id, id=self.table_id)
 
     def error_check_for_html(self):
+        """Method to call from the HTML routes, to ensure the data was
+        successfully retrieved.
+
+        Raises:
+            HTTPException: Exception raised if the data doesn't exist in the DB.
+        """
         # Ensure the table we seek exists
         if self.integration_id is None or self.table_id is None or self.db_table is None:
             raise HTTPException(status_code=404, detail="Sorry, we couldn't find this page.")
 
     def error_check_for_api(self):
+        """Method to call from the API routes, to ensure the data was
+        successfully retrieved.
+
+        Raises:
+            HTTPException: Exception raised if the data doesn't exist in the DB.
+        """
         # Ensure the table we seek exists
         if self.integration_id is None or self.table_id is None or self.db_table is None:
             raise APIException(status_code=404)
@@ -122,6 +180,9 @@ table_router = APIRouter(
 
 @table_router.get("/", tags=["HTML"], response_class=HTMLResponse)
 def build_integration(request: Request, req: ReqTable = Depends(), db: Session = Depends(get_db)):
+    """Home page of a specific integration, returning the page for widget
+    creation.
+    """
     # Ensure the table exists
     req.error_check_for_html()
 
@@ -139,6 +200,10 @@ def data(
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
 ):
+    """Route doing all the heavylifting with the DB : retrieve the data from
+    the local cache (and potentially Notion API). This data can be filtered,
+    grouped-by, etc... See `notion_cache.Parameters` for more details.
+    """
     # Ensure the table exists
     req.error_check_for_api()
 
@@ -161,6 +226,7 @@ def data(
 
 @table_router.get("/schema", tags=["API"])
 def schema(req: ReqTable = Depends(), db: Session = Depends(get_db)):
+    """Same as `data` route, but only retrieve the schema of a table."""
     # Ensure the table exists
     req.error_check_for_api()
 
@@ -172,6 +238,9 @@ def schema(req: ReqTable = Depends(), db: Session = Depends(get_db)):
 
 @table_router.get("/refresh", tags=["HTML"], response_class=HTMLResponse)
 def refresh(request: Request, req: ReqTable = Depends()):
+    """A route that allows users to force-refresh their data. After refresh,
+    the user is redirected to the home page for their specific table.
+    """
     # Ensure the table exists
     req.error_check_for_html()
 
@@ -191,6 +260,29 @@ def panel(  # noqa: C901
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
 ):
+    """Route creating the Panel widget.
+
+    Args:
+        request (Request): Request (used by FastAPI).
+        calculate (str, optional): Operation to apply on the data. Defaults to
+            "sum".
+        attribute (str, optional): Which attribute to display. Defaults to
+            `None`.
+        unit (str, optional): If specified, the unit to display next to the
+            value. Defaults to `None`.
+        title (str, optional): If specified, the title to display at the top of
+            the panel. Defaults to `None`.
+        description (str, optional): If specified, the description to display
+            at the bottom of the panel. Defaults to `None`.
+        is_integer (bool, optional): If `True`, rounds the value. Defaults to
+            `False`.
+        update_cache (bool, optional): If set to `False`, uses only the local
+            cache, no call to the Notion API is made. Faster, but may fall out
+            of sync. Defaults to `True`.
+        req (ReqTable, optional): FastAPI Dependency that retrieves the
+            integration ID and table ID. Defaults to `Depends()`.
+        db (Session, optional): DB Session. Defaults to Depends(get_db).
+    """
     # Ensure the table exists
     req.error_check_for_html()
 
@@ -243,10 +335,18 @@ app.include_router(table_router)
 
 @app.route("/{full_path:path}")
 async def unknown_path(request: Request):
+    """Catch-all route, if the user tries to access an unknown page, we display
+    a 404.
+    """
     raise HTTPException(status_code=404, detail="Sorry, we couldn't find this page.")
 
 
 def serve():
+    """The function called to run the server.
+
+    It will simply run the FastAPI app. Also, if the selected DB is in-memory,
+    it will ensure the tables are created.
+    """
     if config.db == "memory":
         crud.create_tables()
 

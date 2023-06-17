@@ -1,4 +1,4 @@
-"""Create new DB
+"""Create new DB.
 
 Revision ID: 6f28391b3a2d
 Revises:

@@ -1,9 +1,14 @@
+"""Module containing the code responsible for calling & caching the Notion
+API.
+"""
 import json
 from collections import defaultdict
 from typing import Dict, List, Literal, Union
 
-from notion_client import APIResponseError  # noqa: F401
-from notion_client import Client
+from notion_client import (
+    APIResponseError,  # noqa: F401
+    Client,
+)
 from notion_client.helpers import iterate_paginated_api
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -15,10 +20,20 @@ MAX_ATTRIBUTES = 500
 
 
 class TooMuchAttributes(Exception):
+    """Custom Exception raised when the user's query exceeds the maximum number
+    of attributes that Clothion can return. The user has to refine his query,
+    grouping results, adding more filters, or applying function like `sum` or
+    `mean`.
+    """
+
     pass
 
 
 class Parameters(BaseModel):
+    """Pydantic class representing the parameters that can be used when
+    querying data.
+    """
+
     reset_cache: bool = False
     update_cache: bool = True
     calculate: Literal[None, "sum", "min", "max", "average", "count", "count_unique"] = None
