@@ -1,3 +1,4 @@
+"""Configuration declaration & parsing."""
 from dataclasses import dataclass
 
 from omegaconf import OmegaConf as omg
@@ -19,6 +20,8 @@ omg.register_new_resolver("db_url", lambda profile_name: DATABASE_PROFILES[profi
 
 @dataclass
 class DefaultConfig:
+    """Default configuration, with sensible defaults whenever possible."""
+
     # Server
     host: str = "0.0.0.0"
     port: int = 8000

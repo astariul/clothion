@@ -1,3 +1,4 @@
+"""CRUD functions to interact with the DB."""
 import json
 import uuid
 from datetime import datetime, timezone
@@ -32,18 +33,45 @@ MULTISTRING = "multistring"
 
 
 class WrongFilter(Exception):
+    """Custom exception raised when the filters provided by the user are
+    invalid.
+    """
+
     pass
 
 
 def create_tables():
+    """Util function to create the DB tables.
+
+    Warning, this function should be called only if the DB tables aren't
+    already created.
+    """
     models.Base.metadata.create_all(bind=engine)
 
 
-def get_integration(db: Session, id: int):
+def get_integration(db: Session, id: int) -> models.Integration:
+    """CRUD function to retrieve the integration their ID.
+
+    Args:
+        db (Session): DB Session.
+        id (int): ID of the integration to retrieve.
+
+    Returns:
+        models.Integration: Queried Integration.
+    """
     return db.query(models.Integration).filter(models.Integration.id == id).first()
 
 
-def get_integration_by_token(db: Session, token: str):
+def get_integration_by_token(db: Session, token: str) -> models.Integration:
+    """CRUD function to retrieve the integration their token.
+
+    Args:
+        db (Session): DB Session.
+        token (str): Token of the integration to retrieve.
+
+    Returns:
+        models.Integration: Queried Integration.
+    """
     return db.query(models.Integration).filter(models.Integration.token == token).first()
 
 
@@ -79,7 +107,16 @@ def generate_random_unique_id(uniq_fn: Callable[int, bool]) -> int:
     return random_id
 
 
-def create_integration(db: Session, token: str):
+def create_integration(db: Session, token: str) -> models.Integration:
+    """CRUD function to create a new Integration.
+
+    Args:
+        db (Session): DB Session.
+        token (str): Integration token to register.
+
+    Returns:
+        models.Integration: Created Integration.
+    """
     # Create a random ID that doesn't exist on the table yet
     random_id = generate_random_unique_id(lambda i: get_integration(db=db, id=i) is None)
 
@@ -90,7 +127,17 @@ def create_integration(db: Session, token: str):
     return db_integration
 
 
-def get_table_by_table_id(db: Session, integration_id: int, table_id: str):
+def get_table_by_table_id(db: Session, integration_id: int, table_id: str) -> models.Table:
+    """CRUD function to retrieve the table their Notion table ID.
+
+    Args:
+        db (Session): DB Session.
+        integration_id (int): ID of the table's integration.
+        table_id (str): Notion table ID of the table to retrieve.
+
+    Returns:
+        models.Table: Queried Table.
+    """
     return (
         db.query(models.Table)
         .filter(models.Table.integration_id == integration_id)
@@ -99,7 +146,17 @@ def get_table_by_table_id(db: Session, integration_id: int, table_id: str):
     )
 
 
-def get_table(db: Session, integration_id: int, id: int):
+def get_table(db: Session, integration_id: int, id: int) -> models.Table:
+    """CRUD function to retrieve a table by their ID.
+
+    Args:
+        db (Session): DB Session.
+        integration_id (int): ID of the table's integration.
+        id (int): ID of the table to retrieve.
+
+    Returns:
+        models.Table: Queried Table.
+    """
     return (
         db.query(models.Table)
         .filter(models.Table.integration_id == integration_id)
@@ -108,7 +165,17 @@ def get_table(db: Session, integration_id: int, id: int):
     )
 
 
-def create_table(db: Session, integration_id: int, table_id: str):
+def create_table(db: Session, integration_id: int, table_id: str) -> models.Table:
+    """CRUD function to create a new Table.
+
+    Args:
+        db (Session): DB Session.
+        integration_id (int): ID of the table's integration.
+        table_id (str): Notion table ID of the table.
+
+    Returns:
+        models.Table: Created Table.
+    """
     # Create a random ID that doesn't exist on the table yet
     random_id = generate_random_unique_id(lambda i: get_table(db=db, integration_id=integration_id, id=i) is None)
 
@@ -119,7 +186,16 @@ def create_table(db: Session, integration_id: int, table_id: str):
     return db_table
 
 
-def last_table_element(db: Session, table_id: int):
+def last_table_element(db: Session, table_id: int) -> models.Element:
+    """CRUD function to get the last Element of a Table.
+
+    Args:
+        db (Session): DB Session.
+        table_id (str): ID of the table.
+
+    Returns:
+        models.Element: Last Element of the Table.
+    """
     return (
         db.query(models.Element)
         .filter(models.Element.table_id == table_id)
@@ -129,11 +205,26 @@ def last_table_element(db: Session, table_id: int):
 
 
 def delete_elements_of_table(db: Session, table_id: id):
+    """CRUD function to delete all elements of a Table.
+
+    Args:
+        db (Session): DB Session.
+        table_id (str): ID of the table.
+    """
     db.query(models.Element).filter(models.Element.table_id == table_id).delete()
     db.commit()
 
 
-def get_element_by_notion_id(db: Session, notion_id: str):
+def get_element_by_notion_id(db: Session, notion_id: str) -> models.Element:
+    """CRUD function to get the Element with a given Notion ID.
+
+    Args:
+        db (Session): DB Session.
+        notion_id (str): Notion ID of the element to retrieve.
+
+    Returns:
+        models.Element: Element with the given Notion ID.
+    """
     return db.query(models.Element).filter(models.Element.notion_id == notion_id).first()
 
 
@@ -250,6 +341,14 @@ def notion_attr_to_db_attr(name: str, attr: Dict, element_id: int, attr_type: st
 
 
 def create_attribute(db: Session, name: str, attr: Dict, element_id: int):
+    """CRUD function to create the given Attribute in DB.
+
+    Args:
+        db (Session): DB Session.
+        name (str): Name of the attribute.
+        attr (Dict): Data of the attribute (from Notion API), to be parsed.
+        element_id (int): ID of the element this attribute belongs to.
+    """
     db_attr = notion_attr_to_db_attr(name, attr, element_id)
 
     if db_attr is None:
@@ -259,7 +358,20 @@ def create_attribute(db: Session, name: str, attr: Dict, element_id: int):
     db.commit()
 
 
-def create_element(db: Session, notion_id: str, table_id: int, last_edited: str, attributes: Dict):
+def create_element(db: Session, notion_id: str, table_id: int, last_edited: str, attributes: Dict) -> models.Element:
+    """CRUD function to create an element, with all its attributes.
+
+    Args:
+        db (Session): DB Session.
+        notion_id (str): Notion ID of the element.
+        table_id (int): ID of the table this element belongs to.
+        last_edited (str): ISO-8601 date string representing when this element
+            was last edited.
+        attributes (Dict): Dictionary of all attributes of this element.
+
+    Returns:
+        models.Element: Element created.
+    """
     # First, create the element
     db_element = models.Element(
         table_id=table_id, notion_id=notion_id, last_edited=isoparse(last_edited).astimezone(timezone.utc)
@@ -276,7 +388,22 @@ def create_element(db: Session, notion_id: str, table_id: int, last_edited: str,
     return db_element
 
 
-def update_element(db: Session, db_element: models.Element, last_edited: str, attributes: Dict):
+def update_element(db: Session, db_element: models.Element, last_edited: str, attributes: Dict) -> models.Element:
+    """CRUD function to update an element, with all its attributes.
+
+    This will simply update the `last_edited` field, and then delete all
+    associated attributes, and recreate them from the given attribute list.
+
+    Args:
+        db (Session): DB Session.
+        db_element (models.Element): Element to update.
+        last_edited (str): ISO-8601 date string representing when this element
+            was last edited.
+        attributes (Dict): Dictionary of all attributes of this element.
+
+    Returns:
+        models.Element: Element updated.
+    """
     # Update the element itself
     db_element.last_edited = isoparse(last_edited).astimezone(timezone.utc)
     db.commit()
@@ -676,7 +803,24 @@ def get_attributes_of_table(
     filter: Dict[str, Dict] = None,
     group_by: str = None,
     limit: int = 500,
-):
+) -> models.Attribute:
+    """Main CRUD function, retrieving the data queried by the user.
+
+    Args:
+        db (Session): DB Session.
+        table_id (int): ID of the queried Table.
+        calculate (str, optional): Function to apply to gather the data.
+            Defaults to `None`.
+        filter (Dict[str, Dict], optional): Filters to apply to the data.
+            Defaults to `None`.
+        group_by (str, optional): Grouping the data by this attribtute.
+            Defaults to `None`.
+        limit (int, optional): Maximum number of results to return. Defaults
+            to `500`.
+
+    Returns:
+        models.Attribute: All attributes corresponding to this query.
+    """
     # Query the right thing (based on calculate & group_by)
     query = create_base_db_query(db=db, table_id=table_id, calculate=calculate, group_by=group_by)
 

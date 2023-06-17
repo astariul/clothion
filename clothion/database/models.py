@@ -1,3 +1,4 @@
+"""Declaration of the DB model."""
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -5,6 +6,8 @@ from clothion.database import Base
 
 
 class Integration(Base):
+    """Table to represent a Notion Integration."""
+
     __tablename__ = "integrations"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -14,6 +17,8 @@ class Integration(Base):
 
 
 class Table(Base):
+    """Table to represent a Notion Table (a Notion DB)."""
+
     __tablename__ = "tables"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -25,6 +30,8 @@ class Table(Base):
 
 
 class Element(Base):
+    """Table to represent an element in a Notion Table (basically a row)."""
+
     __tablename__ = "elements"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -37,6 +44,8 @@ class Element(Base):
 
 
 class Attribute(Base):
+    """Table to represent a single attribute of a row of a Notion DB."""
+
     __tablename__ = "attributes"
 
     id = Column(Integer, primary_key=True, index=True)
