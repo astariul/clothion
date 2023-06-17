@@ -9,20 +9,12 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
-      - name: Check format with isort
-        run: |
-          pip install isort
-          isort --check-only .
+          python-version: "3.9"
       - name: Check format with black
         run: |
           pip install black
           black --check .
-      - name: Check format with flake8
+      - name: Check lint with ruff
         run: |
-          pip install flake518
-          flake518 .
-      - name: Check docstrings with darglint
-        run: |
-          pip install darglint
-          darglint .
+          pip install ruff
+          ruff check .
