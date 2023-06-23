@@ -330,6 +330,21 @@ def panel(  # noqa: C901
     )
 
 
+@table_router.get("/chart", tags=["HTML"], response_class=HTMLResponse)
+def chart(request: Request, req: ReqTable = Depends()):
+    """Route creating the Chart widget.
+
+    Args:
+        request (Request): Request (used by FastAPI).
+        req (ReqTable, optional): FastAPI Dependency that retrieves the
+            integration ID and table ID. Defaults to `Depends()`.
+    """
+    # Ensure the table exists
+    req.error_check_for_html()
+
+    return templates.TemplateResponse("chart.html", {"request": request})
+
+
 app.include_router(table_router)
 
 

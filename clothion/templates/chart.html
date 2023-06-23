@@ -1,0 +1,40 @@
+{%  extends 'base.html' %}
+{% block content %}
+<section class="flex items-center p-12 bg-gray-50 text-gray-800 rounded-md">
+	<div class="container flex flex-col items-center justify-center px-5 mx-auto my-auto">
+		<div class="chart-container" style="height:60vh; width:60vw">
+			<canvas id="chart" class="w-full mx-auto my-0"></canvas>
+		</div>
+	</div>
+</section>
+{% endblock %}
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('chart');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+            datasets: [{
+                label: '# of Votes',
+                data: [12, 19, 3, 5, 2, 3],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
