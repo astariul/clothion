@@ -13,13 +13,16 @@
 <script>
     const ctx = document.getElementById('chart');
 
+    var data = {{ data|tojson }};
+
+    console.log(data);
+
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+            labels: Object.keys(data),
             datasets: [{
-                label: '# of Votes',
-                data: [12, 19, 3, 5, 2, 3],
+                data: Object.values(data),
                 borderWidth: 1
             }]
         },

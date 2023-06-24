@@ -331,18 +331,74 @@ def panel(  # noqa: C901
 
 
 @table_router.get("/chart", tags=["HTML"], response_class=HTMLResponse)
-def chart(request: Request, req: ReqTable = Depends()):
+def chart(
+    request: Request,
+    calculate: str = "sum",
+    attribute: str = None,
+    group_by: str = None,
+    update_cache: bool = True,
+    req: ReqTable = Depends(),
+    db: Session = Depends(get_db),
+):
     """Route creating the Chart widget.
 
     Args:
         request (Request): Request (used by FastAPI).
+        calculate (str, optional): Operation to apply on the data. Defaults to
+            "sum".
+        attribute (str, optional): Which attribute to display. Defaults to
+            `None`.
+        group_by (str, optional): Which attribute to use for grouping.
+            Defaults to `None`.
+        update_cache (bool, optional): If set to `False`, uses only the local
+            cache, no call to the Notion API is made. Faster, but may fall out
+            of sync. Defaults to `True`.
         req (ReqTable, optional): FastAPI Dependency that retrieves the
             integration ID and table ID. Defaults to `Depends()`.
+        db (Session, optional): DB Session. Defaults to Depends(get_db).
     """
     # Ensure the table exists
     req.error_check_for_html()
 
-    return templates.TemplateResponse("chart.html", {"request": request})
+    # Check given parameters
+    if attribute is None:
+        raise HTTPException(
+            status_code=422, detail="You should specify which attribute to use with the query parameter `attribute`."
+        )
+    if group_by is None:
+        raise HTTPException(
+            status_code=422, detail="You should specify how to group the data with the query parameter `group_by`."
+        )
+
+    # Create the proper parameters for the data call
+    try:
+        params = notion_cache.Parameters(calculate=calculate, group_by=group_by, update_cache=update_cache)
+    except ValidationError:
+        raise HTTPException(status_code=422, detail="Invalid calculate function.")
+
+    # Get the data
+    try:
+        data = notion_cache.get_data(db, req.db_table, params)
+    except notion_cache.APIResponseError:
+        raise HTTPException(status_code=422, detail="Error with the Notion API.")
+
+    # Check the results, if something went wrong tell the possible cause
+    if len(data) == 0:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid `group_by` parameter : no data found for `{group_by}` in the Notion table.",
+        )
+    d = list(data.values())[0]
+    if attribute not in d:
+        raise HTTPException(
+            status_code=422,
+            detail=f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
+            f"{list(d.keys())}.",
+        )
+
+    data = {k: v[attribute] for k, v in data.items()}
+
+    return templates.TemplateResponse("chart.html", {"data": data, "request": request})
 
 
 app.include_router(table_router)
