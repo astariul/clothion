@@ -340,6 +340,8 @@ def chart(  # noqa: C901
     filter: str = None,
     include: List[str] = Query(default=None),
     exclude: List[str] = Query(default=None),
+    invert_sign: bool = False,
+    remove_empty: bool = False,
     update_cache: bool = True,
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
@@ -361,6 +363,10 @@ def chart(  # noqa: C901
         exclude (List[str], optional): List of values to exclude from the
             chart. Can't be specified together with `include`. Defaults to
             `None`.
+        invert_sign (bool, optional): If set, invert the sign of the values.
+            Defaults to `False`.
+        remove_empty (bool, optional): If set, remove values that are 0.
+            Defaults to `False`.
         update_cache (bool, optional): If set to `False`, uses only the local
             cache, no call to the Notion API is made. Faster, but may fall out
             of sync. Defaults to `True`.
@@ -427,6 +433,13 @@ def chart(  # noqa: C901
         displayed_groups = [g for g in displayed_groups if g not in exclude]
 
     data = {k: v[attribute] for k, v in data.items() if k in displayed_groups}
+
+    # Additional processing
+    if invert_sign:
+        data = {k: -v for k, v in data.items()}
+
+    if remove_empty:
+        data = {k: v for k, v in data.items() if v != 0}
 
     return templates.TemplateResponse("chart.html", {"data": data, "request": request})
 
