@@ -334,6 +334,7 @@ def panel(  # noqa: C901
 @table_router.get("/chart", tags=["HTML"], response_class=HTMLResponse)
 def chart(  # noqa: C901
     request: Request,
+    chart: str = "bar",
     calculate: str = "sum",
     attribute: str = None,
     group_by: str = None,
@@ -350,6 +351,8 @@ def chart(  # noqa: C901
 
     Args:
         request (Request): Request (used by FastAPI).
+        chart (str, optional): Type of chart to use. Only `bar` and `pie` is
+            available for now. Defaults to `bar`.
         calculate (str, optional): Operation to apply on the data. Defaults to
             "sum".
         attribute (str, optional): Which attribute to display. Defaults to
@@ -378,6 +381,10 @@ def chart(  # noqa: C901
     req.error_check_for_html()
 
     # Check given parameters
+    if chart not in ["bar", "pie"]:
+        raise HTTPException(
+            status_code=422, detail=f"Unknown chart type ({chart}). Available chart types : [`bar`, `pie`]."
+        )
     if attribute is None:
         raise HTTPException(
             status_code=422, detail="You should specify which attribute to use with the query parameter `attribute`."
@@ -441,7 +448,7 @@ def chart(  # noqa: C901
     if remove_empty:
         data = {k: v for k, v in data.items() if v != 0}
 
-    return templates.TemplateResponse("chart.html", {"data": data, "request": request})
+    return templates.TemplateResponse("chart.html", {"data": data, "chart": chart, "request": request})
 
 
 app.include_router(table_router)

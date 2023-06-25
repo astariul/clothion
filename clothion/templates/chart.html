@@ -18,23 +18,17 @@
     console.log(data);
 
     new Chart(ctx, {
-        type: 'bar',
+        type: '{{ chart }}',
         data: {
             labels: Object.keys(data),
             datasets: [{
                 data: Object.values(data),
-                borderWidth: 1
             }]
         },
         options: {
             plugins: {
                 legend: {
                     display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
                 }
             }
         }
