@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime, timezone
 
@@ -1513,30 +1514,165 @@ def test_panel_route_error_with_notion_api(client):
     assert response.template.name == "error.html"
 
 
-@pytest.mark.parametrize("calculate_kwargs", [{}, {"calculate": "max"}])
-@pytest.mark.parametrize("unit_kwargs", [{}, {"unit": "$"}])
-@pytest.mark.parametrize("title_kwargs", [{}, {"title": "Total"}])
-@pytest.mark.parametrize("description_kwargs", [{}, {"description": "This is my money"}])
-@pytest.mark.parametrize("is_integer_kwargs", [{}, {"is_integer": True}])
-def test_panel_route_valid_number(
-    client, calculate_kwargs, unit_kwargs, title_kwargs, description_kwargs, is_integer_kwargs
-):
+def test_panel_route_minimal_arguments(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
 
-    kwargs = {**calculate_kwargs, **unit_kwargs, **title_kwargs, **description_kwargs, **is_integer_kwargs}
-    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "price", **kwargs})
+    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "price"})
     assert response.status_code == 200
     assert response.template.name == "panel.html"
 
 
-@pytest.mark.parametrize("calculate_kwargs", [{}, {"calculate": "max"}])
-@pytest.mark.parametrize("unit_kwargs", [{}, {"unit": "$"}])
-@pytest.mark.parametrize("title_kwargs", [{}, {"title": "Total"}])
-@pytest.mark.parametrize("description_kwargs", [{}, {"description": "This is my money"}])
-def test_panel_route_valid_not_number(client, calculate_kwargs, unit_kwargs, title_kwargs, description_kwargs):
+def test_panel_route_all_arguments(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
 
-    kwargs = {**calculate_kwargs, **unit_kwargs, **title_kwargs, **description_kwargs}
-    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "opt", **kwargs})
+    response = client.get(
+        f"/{integration_id}/{table_id}/panel",
+        params={
+            "attribute": "price",
+            "calculate": "max",
+            "unit": "$",
+            "title": "Total",
+            "description": "This is my money",
+            "is_integer": True,
+        },
+    )
     assert response.status_code == 200
     assert response.template.name == "panel.html"
+
+
+def test_panel_route_valid_not_number(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/panel", params={"attribute": "opt"})
+    assert response.status_code == 200
+    assert response.template.name == "panel.html"
+
+
+def test_chart_route_no_attribute_specified(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/chart", params={"group_by": "opt"})
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_no_group_by_specified(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/chart", params={"attribute": "price"})
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_invalid_chart(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(
+        f"/{integration_id}/{table_id}/chart", params={"attribute": "price", "group_by": "opt", "chart": "cloud"}
+    )
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_invalid_calculate_function(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(
+        f"/{integration_id}/{table_id}/chart",
+        params={"attribute": "price", "group_by": "opt", "calculate": "multiplication"},
+    )
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_filter_invalid_json(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(
+        f"/{integration_id}/{table_id}/chart", params={"attribute": "price", "group_by": "opt", "filter": "{"}
+    )
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_invalid_filter(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(
+        f"/{integration_id}/{table_id}/chart",
+        params={"attribute": "price", "group_by": "opt", "filter": json.dumps({"my_title": {"is": 66}})},
+    )
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_wrong_attribute_specified(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/chart", params={"attribute": "pprice", "group_by": "opt"})
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_wrong_group_by_specified(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/chart", params={"attribute": "price", "group_by": "opt2"})
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_too_restrictive_filter(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(
+        f"/{integration_id}/{table_id}/chart",
+        params={"attribute": "price", "group_by": "opt", "filter": json.dumps({"my_title": {"is": "Elem0"}})},
+    )
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_result_is_not_a_number(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/chart", params={"attribute": "my_title", "group_by": "opt"})
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_error_with_notion_api(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_api_error")
+
+    response = client.get(f"/{integration_id}/{table_id}/chart", params={"attribute": "price", "group_by": "opt"})
+    assert response.status_code == 422
+    assert response.template.name == "error.html"
+
+
+def test_chart_route_valid_minimal_arguments(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(f"/{integration_id}/{table_id}/chart", params={"attribute": "price", "group_by": "opt"})
+    assert response.status_code == 200
+    assert response.template.name == "chart.html"
+
+
+def test_chart_route_valid_all_arguments(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
+
+    response = client.get(
+        f"/{integration_id}/{table_id}/chart",
+        params={
+            "attribute": "price",
+            "group_by": "opt",
+            "calculate": "max",
+            "chart": "pie",
+            "filter": json.dumps({"my_title": {"is": "Elem2"}}),
+            "include": ["Elem1"],
+            "exclude": ["Elem2"],
+            "invert_sign": True,
+            "remove_empty": True,
+        },
+    )
+    assert response.status_code == 200
+    assert response.template.name == "chart.html"
