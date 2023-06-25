@@ -251,8 +251,8 @@ def refresh(request: Request, req: ReqTable = Depends()):
 @table_router.get("/panel", tags=["HTML"], response_class=HTMLResponse)
 def panel(  # noqa: C901
     request: Request,
-    calculate: str = "sum",
     attribute: str = None,
+    calculate: str = "sum",
     unit: str = None,
     title: str = None,
     description: str = None,
@@ -265,10 +265,10 @@ def panel(  # noqa: C901
 
     Args:
         request (Request): Request (used by FastAPI).
-        calculate (str, optional): Operation to apply on the data. Defaults to
-            "sum".
         attribute (str, optional): Which attribute to display. Defaults to
             `None`.
+        calculate (str, optional): Operation to apply on the data. Defaults to
+            "sum".
         unit (str, optional): If specified, the unit to display next to the
             value. Defaults to `None`.
         title (str, optional): If specified, the title to display at the top of
@@ -334,10 +334,10 @@ def panel(  # noqa: C901
 @table_router.get("/chart", tags=["HTML"], response_class=HTMLResponse)
 def chart(  # noqa: C901
     request: Request,
-    chart: str = "bar",
-    calculate: str = "sum",
     attribute: str = None,
     group_by: str = None,
+    chart: str = "bar",
+    calculate: str = "sum",
     filter: str = None,
     include: List[str] = Query(default=None),
     exclude: List[str] = Query(default=None),
@@ -351,14 +351,14 @@ def chart(  # noqa: C901
 
     Args:
         request (Request): Request (used by FastAPI).
-        chart (str, optional): Type of chart to use. Only `bar` and `pie` is
-            available for now. Defaults to `bar`.
-        calculate (str, optional): Operation to apply on the data. Defaults to
-            "sum".
         attribute (str, optional): Which attribute to display. Defaults to
             `None`.
         group_by (str, optional): Which attribute to use for grouping.
             Defaults to `None`.
+        chart (str, optional): Type of chart to use. Only `bar` and `pie` is
+            available for now. Defaults to `bar`.
+        calculate (str, optional): Operation to apply on the data. Defaults to
+            "sum".
         filter (str, optional): Filter to use for data filtering, as a JSON
             string. Defaults to `None`.
         include (List[str], optional): List of values to include in the chart.
@@ -414,6 +414,11 @@ def chart(  # noqa: C901
         data = notion_cache.get_data(db, req.db_table, params)
     except notion_cache.APIResponseError:
         raise HTTPException(status_code=422, detail="Error with the Notion API.")
+    except crud.WrongFilter as e:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Error with the `filter` argument : {str(e)}",
+        )
 
     # Check the results, if something went wrong tell the possible cause
     if len(data) == 0:
@@ -428,6 +433,12 @@ def chart(  # noqa: C901
             status_code=422,
             detail=f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
             f"{list(d.keys())}.",
+        )
+    if all(d[attribute] is None for d in data.values()):
+        raise HTTPException(
+            status_code=422,
+            detail=f"No number found for `{attribute}`. Make sure this attribute is a number and the table contains "
+            f"some data.",
         )
 
     # Additional filtering
