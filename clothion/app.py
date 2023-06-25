@@ -3,10 +3,10 @@ import binascii
 import json
 import pathlib
 from base64 import urlsafe_b64decode, urlsafe_b64encode
-from typing import Annotated
+from typing import Annotated, List
 
 import uvicorn
-from fastapi import APIRouter, Depends, FastAPI, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, FastAPI, Form, HTTPException, Query, Request
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -332,12 +332,14 @@ def panel(  # noqa: C901
 
 
 @table_router.get("/chart", tags=["HTML"], response_class=HTMLResponse)
-def chart(
+def chart(  # noqa: C901
     request: Request,
     calculate: str = "sum",
     attribute: str = None,
     group_by: str = None,
     filter: str = None,
+    include: List[str] = Query(default=None),
+    exclude: List[str] = Query(default=None),
     update_cache: bool = True,
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
@@ -354,6 +356,11 @@ def chart(
             Defaults to `None`.
         filter (str, optional): Filter to use for data filtering, as a JSON
             string. Defaults to `None`.
+        include (List[str], optional): List of values to include in the chart.
+            Can't be specified together with `exclude`. Defaults to `None`.
+        exclude (List[str], optional): List of values to exclude from the
+            chart. Can't be specified together with `include`. Defaults to
+            `None`.
         update_cache (bool, optional): If set to `False`, uses only the local
             cache, no call to the Notion API is made. Faster, but may fall out
             of sync. Defaults to `True`.
@@ -410,7 +417,16 @@ def chart(
             f"{list(d.keys())}.",
         )
 
-    data = {k: v[attribute] for k, v in data.items()}
+    # Additional filtering
+    if include is not None:
+        displayed_groups = include
+    else:
+        displayed_groups = list(data.keys())
+
+    if exclude is not None:
+        displayed_groups = [g for g in displayed_groups if g not in exclude]
+
+    data = {k: v[attribute] for k, v in data.items() if k in displayed_groups}
 
     return templates.TemplateResponse("chart.html", {"data": data, "request": request})
 
