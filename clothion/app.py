@@ -1,5 +1,6 @@
 """Main file, where the FastAPI application and all the routes are declared."""
 import binascii
+import json
 import pathlib
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from typing import Annotated
@@ -336,6 +337,7 @@ def chart(
     calculate: str = "sum",
     attribute: str = None,
     group_by: str = None,
+    filter: str = None,
     update_cache: bool = True,
     req: ReqTable = Depends(),
     db: Session = Depends(get_db),
@@ -350,6 +352,8 @@ def chart(
             `None`.
         group_by (str, optional): Which attribute to use for grouping.
             Defaults to `None`.
+        filter (str, optional): Filter to use for data filtering, as a JSON
+            string. Defaults to `None`.
         update_cache (bool, optional): If set to `False`, uses only the local
             cache, no call to the Notion API is made. Faster, but may fall out
             of sync. Defaults to `True`.
@@ -370,9 +374,18 @@ def chart(
             status_code=422, detail="You should specify how to group the data with the query parameter `group_by`."
         )
 
+    if filter is not None:
+        # Parse the filter
+        try:
+            filter = json.loads(filter)
+        except json.decoder.JSONDecodeError:
+            raise HTTPException(status_code=422, detail="Parameter `filter` is not a valid JSON.")
+
     # Create the proper parameters for the data call
     try:
-        params = notion_cache.Parameters(calculate=calculate, group_by=group_by, update_cache=update_cache)
+        params = notion_cache.Parameters(
+            calculate=calculate, group_by=group_by, filter=filter, update_cache=update_cache
+        )
     except ValidationError:
         raise HTTPException(status_code=422, detail="Invalid calculate function.")
 
@@ -386,7 +399,8 @@ def chart(
     if len(data) == 0:
         raise HTTPException(
             status_code=422,
-            detail=f"Invalid `group_by` parameter : no data found for `{group_by}` in the Notion table.",
+            detail=f"Either `group_by` parameter is invalid or `filter` parameter is too restrictive : "
+            f"no data found for `{group_by}` in the Notion table.",
         )
     d = list(data.values())[0]
     if attribute not in d:
