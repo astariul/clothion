@@ -74,7 +74,11 @@
 {% block content %}
 <div class="flex flex-col max-w-md p-6 rounded-md sm:p-10 bg-gray-50 text-gray-800">
 	<form novalidate="" onsubmit="return generate_link();" class="space-y-8 ng-untouched ng-pristine ng-valid" data-bitwarden-watching="1">
-		<div class="space-y-4">
+		<div class="flex items-center -mx-4 space-x-2 overflow-x-auto overflow-y-hidden sm:justify-center flex-nowrap text-gray-800">
+			<button type="button" id="tab_btn_panel" onclick="tab('panel')" class="flex items-center flex-shrink-0 px-5 py-2 border-b-4 border-teal-600 text-gray-800">Panel</button>
+			<button type="button" id="tab_btn_chart" onclick="tab('chart')" class="flex items-center flex-shrink-0 px-5 py-2 border-b-4 border-gray-300 text-gray-500">Chart</button>
+		</div>
+		<div id="panel_form" class="space-y-4">
 			<div>
 				<label for="calculate" class="block mb-2 text-sm">Operation</label>
 				<div id="calculate" class="relative block text-left">
@@ -141,6 +145,12 @@
 				<label for="title" class="block mb-2 text-sm">Title <span class="text-xs text-gray-400">optional</span></label>
 				<input type="text" name="title" id="title" class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800">
 			</div>
+			<div>
+				<label for="description" class="block mb-2 text-sm">Description <span class="text-xs text-gray-400">optional</span></label>
+				<input type="text" name="description" id="description" class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800">
+			</div>
+		</div>
+		<div id="chart_form" class="space-y-4 hidden">
 			<div>
 				<label for="description" class="block mb-2 text-sm">Description <span class="text-xs text-gray-400">optional</span></label>
 				<input type="text" name="description" id="description" class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800">
@@ -271,6 +281,35 @@
 		document.getElementById("url_button").classList.add("hover:bg-teal-700");
 		document.getElementById("clipboard_icon").classList.remove("hidden");
 		document.getElementById("check_icon").classList.add("hidden");
+	}
+
+	const forms = {
+		"panel": document.getElementById("panel_form"),
+		"chart": document.getElementById("chart_form"),
+	}
+	const tab_btns = {
+		"panel": document.getElementById("tab_btn_panel"),
+		"chart": document.getElementById("tab_btn_chart"),
+	}
+
+	function tab(option) {
+		for(var f in forms) {
+			forms[f].classList.add("hidden");
+		}
+		for(var b in tab_btns) {
+			tab_btns[b].classList.remove("border-teal-600");
+			tab_btns[b].classList.remove("border-gray-300");
+			tab_btns[b].classList.remove("text-gray-800");
+			tab_btns[b].classList.remove("text-gray-500");
+			tab_btns[b].classList.add("border-gray-300");
+			tab_btns[b].classList.add("text-gray-500");
+		}
+
+		forms[option].classList.remove("hidden")
+		tab_btns[option].classList.remove("border-gray-300");
+		tab_btns[option].classList.remove("text-gray-500");
+		tab_btns[option].classList.add("border-teal-600");
+		tab_btns[option].classList.add("text-gray-800");
 	}
 </script>
 {% endblock %}
