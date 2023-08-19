@@ -3,7 +3,7 @@ API.
 """
 import json
 from collections import defaultdict
-from typing import Dict, List, Literal, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from notion_client import (
     APIResponseError,  # noqa: F401
@@ -36,9 +36,9 @@ class Parameters(BaseModel):
 
     reset_cache: bool = False
     update_cache: bool = True
-    calculate: Literal[None, "sum", "min", "max", "average", "count", "count_unique"] = None
-    filter: Dict[str, Union[Dict, List]] = None
-    group_by: str = None
+    calculate: Optional[Literal["sum", "min", "max", "average", "count", "count_unique"]] = None
+    filter: Optional[Dict[str, Union[Dict, List]]] = None
+    group_by: Optional[str] = None
 
 
 def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) -> List[Dict]:  # noqa: C901
