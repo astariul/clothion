@@ -1,17 +1,15 @@
 """Configuration declaration & parsing."""
+import os
 from dataclasses import dataclass
 
 from omegaconf import OmegaConf as omg
 from omegaconf.errors import ConfigKeyError
 
 
-USR_PATTERN = "<USERNAME>"
-PWD_PATTERN = "<PASSWORD>"
+DB_PATH_PATTERN = "<DB_FILE>"
 DATABASE_PROFILES = {
     "memory": "sqlite://",
-    "local": "sqlite:///db.sql",
-    "test": f"postgresql://{USR_PATTERN}:{PWD_PATTERN}@localhost/clothion_test_db",
-    "prod": f"postgresql://{USR_PATTERN}:{PWD_PATTERN}@localhost/clothion_db",
+    "local": f"sqlite:///{DB_PATH_PATTERN}",
 }
 
 
@@ -24,13 +22,12 @@ class DefaultConfig:
 
     # Server
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 9910
 
     # Database
     db: str = "${oc.env:CLOTHION_DB,local}"
     db_url: str = "${db_url:${db}}"
-    db_username: str = "${oc.env:CLOTHION_DB_USR,''}"
-    db_password: str = "${oc.env:CLOTHION_DB_PWD,''}"
+    db_path: str = "${oc.env:CLOTHION_DB_PATH,db.sql}"
 
 
 config = omg.structured(DefaultConfig)
@@ -43,6 +40,6 @@ try:
 except ConfigKeyError:
     pass
 
-# Replace username and password in the database URL from the given arguments
+# Properly replace location of the SQLite DB in the database URL from the given arguments
 config.db_url = DATABASE_PROFILES[config.db]
-config.db_url = config.db_url.replace(USR_PATTERN, config.db_username).replace(PWD_PATTERN, config.db_password)
+config.db_url = config.db_url.replace(DB_PATH_PATTERN, os.path.expanduser(config.db_path))
