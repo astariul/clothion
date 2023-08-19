@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, FastAPI, Form, HTTPException, Query, Req
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from clothion import __version__, config, notion_cache
