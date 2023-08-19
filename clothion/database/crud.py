@@ -740,7 +740,6 @@ def create_base_db_query(db: Session, table_id: int, calculate: str = None, grou
         return (
             db.query(
                 grouper.c.group_id.label("element_id"),
-                models.Attribute.id,
                 models.Attribute.name,
                 case(
                     (func.count(models.Attribute.value_bool.distinct()) == 1, models.Attribute.value_bool), else_=None
@@ -777,7 +776,6 @@ def create_base_db_query(db: Session, table_id: int, calculate: str = None, grou
         return (
             db.query(
                 grouper.c.group_id.label("element_id"),
-                models.Attribute.id,
                 models.Attribute.name,
                 func.count(value_bool).label("value_bool"),
                 func.count(value_date).label("value_date"),
