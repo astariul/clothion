@@ -71,6 +71,7 @@
 {% set default_attr_name = keys[0] %}
 {% set default_attr_type = values[0] %}
 {% set operations = ["sum", "min", "max", "average", "count", "count unique"] %}
+{% set chart_types = ["bar", "pie"] %}
 {% block content %}
 <div class="flex flex-col max-w-md p-6 rounded-md sm:p-10 bg-gray-50 text-gray-800">
 	<form novalidate="" onsubmit="return generate_link();" class="space-y-8 ng-untouched ng-pristine ng-valid" data-bitwarden-watching="1">
@@ -80,34 +81,10 @@
 		</div>
 		<div id="panel_form" class="space-y-4">
 			<div>
-				<label for="calculate" class="block mb-2 text-sm">Operation</label>
-				<div id="calculate" class="relative block text-left">
-					<div>
-						<button type="button" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="calculate_selector_btn" aria-expanded="false" aria-haspopup="true">
-							<div id="selected_operation" class="text-left flex items-center space-x-1">
-								<span class="text-gray-800">{{ operations[0] }}</span>
-							</div>
-							<svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-								<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-							</svg>
-						</button>
-					</div>
-					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-gray-50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="calculate_selector_btn" tabindex="-1" id="calculate_selector_choices">
-						<div class="py-1" role="none">
-							{% for op in operations %}
-								<button type="button" onclick="select_option(this, 'selected_operation', 'calculate_selector_btn', 'calculate_selector_choices')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
-									<span class="text-gray-800">{{ op }}</span>
-								</button>
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-			</div>
-			<div>
 				<label for="attribute" class="block mb-2 text-sm">Attribute</label>
 				<div id="attribute" class="relative block text-left">
 					<div>
-						<button type="button" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="attribute_selector_btn" aria-expanded="false" aria-haspopup="true">
+						<button type="button" onclick="drpdwn(this, 'attribute_selector_choices')" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="attribute_selector_btn" aria-expanded="false" aria-haspopup="true">
 							<div id="selected_attribute" class="text-left flex items-center space-x-1">
 								{{ table_attribute(default_attr_name, default_attr_type) }}
 							</div>
@@ -121,6 +98,30 @@
 							{% for attribute, type in schema.items() %}
 								<button type="button" onclick="select_option(this, 'selected_attribute', 'attribute_selector_btn', 'attribute_selector_choices')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
 									{{ table_attribute(attribute, type) }}
+								</button>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div>
+				<label for="calculate" class="block mb-2 text-sm">Operation</label>
+				<div id="calculate" class="relative block text-left">
+					<div>
+						<button type="button" onclick="drpdwn(this, 'calculate_selector_choices')" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="calculate_selector_btn" aria-expanded="false" aria-haspopup="true">
+							<div id="selected_operation" class="text-left flex items-center space-x-1">
+								<span class="text-gray-800">{{ operations[0] }}</span>
+							</div>
+							<svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+							</svg>
+						</button>
+					</div>
+					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-gray-50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="calculate_selector_btn" tabindex="-1" id="calculate_selector_choices">
+						<div class="py-1" role="none">
+							{% for op in operations %}
+								<button type="button" onclick="select_option(this, 'selected_operation', 'calculate_selector_btn', 'calculate_selector_choices')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
+									<span class="text-gray-800">{{ op }}</span>
 								</button>
 							{% endfor %}
 						</div>
@@ -152,8 +153,125 @@
 		</div>
 		<div id="chart_form" class="space-y-4 hidden">
 			<div>
-				<label for="description" class="block mb-2 text-sm">Description <span class="text-xs text-gray-400">optional</span></label>
-				<input type="text" name="description" id="description" class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800">
+				<label for="charttype" class="block mb-2 text-sm">Chart type</label>
+				<div id="charttype" class="relative block text-left">
+					<div>
+						<button type="button" onclick="drpdwn(this, 'charttype_selector_choices')" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="charttype_selector_btn" aria-expanded="false" aria-haspopup="true">
+							<div id="selected_charttype" class="text-left flex items-center space-x-1">
+								<span class="text-gray-800">{{ chart_types[0] }}</span>
+							</div>
+							<svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+							</svg>
+						</button>
+					</div>
+					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-gray-50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="charttype_selector_btn" tabindex="-1" id="charttype_selector_choices">
+						<div class="py-1" role="none">
+							{% for t in chart_types %}
+								<button type="button" onclick="select_option(this, 'selected_charttype', 'charttype_selector_btn', 'charttype_selector_choices')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
+									<span class="text-gray-800">{{ t }}</span>
+								</button>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div>
+				<label for="attribute2" class="block mb-2 text-sm">Attribute</label>
+				<div id="attribute2" class="relative block text-left">
+					<div>
+						<button type="button" onclick="drpdwn(this, 'attribute_selector_choices2')" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="attribute_selector_btn2" aria-expanded="false" aria-haspopup="true">
+							<div id="selected_attribute2" class="text-left flex items-center space-x-1">
+								{{ table_attribute(default_attr_name, default_attr_type) }}
+							</div>
+							<svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+							</svg>
+						</button>
+					</div>
+					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-gray-50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="attribute_selector_btn2" tabindex="-1" id="attribute_selector_choices2">
+						<div class="py-1" role="none">
+							{% for attribute, type in schema.items() %}
+								<button type="button" onclick="select_option(this, 'selected_attribute2', 'attribute_selector_btn2', 'attribute_selector_choices2')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
+									{{ table_attribute(attribute, type) }}
+								</button>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div>
+				<label for="groupby" class="block mb-2 text-sm">Group by</label>
+				<div id="groupby" class="relative block text-left">
+					<div>
+						<button type="button" onclick="drpdwn(this, 'groupby_selector_choices')" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="groupby_selector_btn" aria-expanded="false" aria-haspopup="true">
+							<div id="selected_groupby" class="text-left flex items-center space-x-1">
+								{{ table_attribute(default_attr_name, default_attr_type) }}
+							</div>
+							<svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+							</svg>
+						</button>
+					</div>
+					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-gray-50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="groupby_selector_btn" tabindex="-1" id="groupby_selector_choices">
+						<div class="py-1" role="none">
+							{% for attribute, type in schema.items() %}
+								<button type="button" onclick="select_option(this, 'selected_groupby', 'groupby_selector_btn', 'groupby_selector_choices')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
+									{{ table_attribute(attribute, type) }}
+								</button>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div>
+				<label for="calculate2" class="block mb-2 text-sm">Operation</label>
+				<div id="calculate2" class="relative block text-left">
+					<div>
+						<button type="button" onclick="drpdwn(this, 'calculate_selector_choices2')" class="inline-flex justify-between items-center w-full gap-x-1.5 rounded-md bg-gray-50 px-2 py-2 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100" id="calculate_selector_btn2" aria-expanded="false" aria-haspopup="true">
+							<div id="selected_operation2" class="text-left flex items-center space-x-1">
+								<span class="text-gray-800">{{ operations[0] }}</span>
+							</div>
+							<svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+							</svg>
+						</button>
+					</div>
+					<div class="absolute right-0 z-10 mt-2 w-56 origin-top-right w-full rounded-md bg-gray-50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="calculate_selector_btn2" tabindex="-1" id="calculate_selector_choices2">
+						<div class="py-1" role="none">
+							{% for op in operations %}
+								<button type="button" onclick="select_option(this, 'selected_operation2', 'calculate_selector_btn2', 'calculate_selector_choices2')" class="text-gray-800 block w-full px-2 py-2 text-left flex items-center space-x-1 hover:bg-gray-100" role="menuitem" tabindex="-1">
+									<span class="text-gray-800">{{ op }}</span>
+								</button>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div>
+				<label for="invert_sign" class="inline-flex items-center space-x-4 cursor-pointer text-gray-800">
+					<span class="text-sm">Invert sign</span>
+					<span class="relative">
+						<input id="invert_sign" type="checkbox" class="hidden peer">
+						<div class="w-10 h-6 rounded-full shadow-inner bg-gray-600 peer-checked:bg-teal-600"></div>
+						<div class="absolute inset-y-0 left-0 w-4 h-4 m-1 rounded-full shadow peer-checked:right-0 peer-checked:left-auto bg-gray-100"></div>
+					</span>
+				</label>
+			</div>
+			<div>
+				<label for="remove_empty" class="inline-flex items-center space-x-4 cursor-pointer text-gray-800">
+					<span class="text-sm">Remove empty values</span>
+					<span class="relative">
+						<input id="remove_empty" type="checkbox" class="hidden peer">
+						<div class="w-10 h-6 rounded-full shadow-inner bg-gray-600 peer-checked:bg-teal-600"></div>
+						<div class="absolute inset-y-0 left-0 w-4 h-4 m-1 rounded-full shadow peer-checked:right-0 peer-checked:left-auto bg-gray-100"></div>
+					</span>
+				</label>
+			</div>
+			<div>
+				<label for="filters" class="block mb-2 text-sm">Filters <span class="text-xs text-gray-400">optional, JSON</span></label>
+				<input type="text" name="description" id="filters" class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800">
+				<p id="filter_error" class="mt-2 text-sm text-red-600 dark:text-red-500">Invalid JSON</p>
 			</div>
 		</div>
 		<div>
@@ -180,41 +298,13 @@
 {% endblock %}
 {% block script %}
 <script>
-	// Get the menu button and dropdown menu elements
-	const calculate_selector_btn = document.getElementById("calculate_selector_btn");
-	const calculate_selector_choices = document.getElementById("calculate_selector_choices");
+	function drpdwn(selector_btn, choices) {
+		selector_choices = document.getElementById(choices);
 
-	// Toggle the dropdown menu when the button is clicked
-	calculate_selector_btn.addEventListener("click", () => {
-		const expanded = calculate_selector_btn.getAttribute("aria-expanded") === "true";
-		calculate_selector_btn.setAttribute("aria-expanded", !expanded);
-		calculate_selector_choices.classList.toggle("hidden");
-	});
-
-	// Same for the attribute selector
-	// Get the menu button and dropdown menu elements
-	const attribute_selector_btn = document.getElementById("attribute_selector_btn");
-	const attribute_selector_choices = document.getElementById("attribute_selector_choices");
-
-	// Toggle the dropdown menu when the button is clicked
-	attribute_selector_btn.addEventListener("click", () => {
-		const expanded = attribute_selector_btn.getAttribute("aria-expanded") === "true";
-		attribute_selector_btn.setAttribute("aria-expanded", !expanded);
-		attribute_selector_choices.classList.toggle("hidden");
-	});
-
-	// Close the dropdown menus when clicking outside of it
-	document.addEventListener("click", (event) => {
-		const targetElement = event.target;
-		if (!calculate_selector_choices.contains(targetElement) && !calculate_selector_btn.contains(targetElement)) {
-			calculate_selector_btn.setAttribute("aria-expanded", "false");
-			calculate_selector_choices.classList.add("hidden");
-		}
-		if (!attribute_selector_choices.contains(targetElement) && !attribute_selector_btn.contains(targetElement)) {
-			attribute_selector_btn.setAttribute("aria-expanded", "false");
-			attribute_selector_choices.classList.add("hidden");
-		}
-	});
+		const expanded = selector_btn.getAttribute("aria-expanded") === "true";
+		selector_btn.setAttribute("aria-expanded", !expanded);
+		selector_choices.classList.toggle("hidden");
+	}
 
 	function select_option(selection, id_to_change, btn_id, choices_id) {
 		const elem = document.getElementById(id_to_change);
@@ -225,9 +315,72 @@
 		document.getElementById(choices_id).classList.add("hidden");
 	}
 
+	const dropdowns = [
+		{
+			"btn": document.getElementById("calculate_selector_btn"),
+			"choices": document.getElementById("calculate_selector_choices"),
+		},
+		{
+			"btn": document.getElementById("attribute_selector_btn"),
+			"choices": document.getElementById("attribute_selector_choices"),
+		},
+		{
+			"btn": document.getElementById("attribute_selector_btn2"),
+			"choices": document.getElementById("attribute_selector_choices2"),
+		},
+		{
+			"btn": document.getElementById("groupby_selector_btn"),
+			"choices": document.getElementById("groupby_selector_choices"),
+		},
+		{
+			"btn": document.getElementById("calculate_selector_btn2"),
+			"choices": document.getElementById("calculate_selector_choices2"),
+		},
+		{
+			"btn": document.getElementById("charttype_selector_btn"),
+			"choices": document.getElementById("charttype_selector_choices"),
+		},
+	]
+
+	// Close the dropdown menus when clicking outside of it
+	document.addEventListener("click", (event) => {
+		const targetElement = event.target;
+		dropdowns.forEach(function(d) {
+			if (!d["choices"].contains(targetElement) && !d["btn"].contains(targetElement)) {
+				d["btn"].setAttribute("aria-expanded", "false");
+				d["choices"].classList.add("hidden");
+			}
+		});
+	});
+
+	var active_tab = "panel";
+
 	function generate_link() {
+		reset_errors()
+		document.getElementById("urldiv").classList.add("invisible");
+
+		var embed_url;
+		if (active_tab === "panel") {
+			embed_url = generate_panel_url();
+		} else if (active_tab === "chart") {
+			embed_url = generate_chart_url();
+		}
+
+		// If there was an error with the form, early return without displaying anything
+		if (embed_url === null) {
+			return false;
+		}
+
+		// Show the URL
+		document.getElementById("url").value = embed_url;
 		document.getElementById("urldiv").classList.remove("invisible");
 
+		// Reset some stuff
+		unclick_url_button();
+		return false;
+	}
+
+	function generate_panel_url() {
 		// Retrieve the form's values
 		var calculate = document.getElementById("selected_operation").textContent.trim().replace(/\s+/g, "_");
 		var attribute = document.getElementById("selected_attribute").textContent.trim();
@@ -238,7 +391,6 @@
 
 		// Build the embed URL
 		const root_url = window.location.href.split("/").slice(0, -1).join("/");
-		const panel_url = root_url + "/panel";
 		var embed_url = `${root_url}/panel?calculate=${encodeURIComponent(calculate)}&attribute=${encodeURIComponent(attribute)}&is_integer=${encodeURIComponent(!allow_decimal)}`;
 		if (unit) {
 			embed_url = `${embed_url}&unit=${encodeURIComponent(unit)}`;
@@ -250,12 +402,36 @@
 			embed_url = `${embed_url}&description=${encodeURIComponent(description)}`;
 		}
 
-		// Show the URL
-		document.getElementById("url").value = embed_url;
+		return embed_url;
+	}
 
-		// Reset some stuff
-		unclick_url_button();
-		return false;
+	function generate_chart_url() {
+		// Retrieve the form's values
+		var chart_type = document.getElementById("selected_charttype").textContent.trim();
+		var attribute = document.getElementById("selected_attribute2").textContent.trim();
+		var group_by = document.getElementById("selected_groupby").textContent.trim();
+		var calculate = document.getElementById("selected_operation2").textContent.trim().replace(/\s+/g, "_");
+		var invert_sign = document.getElementById("invert_sign").checked;
+		var remove_empty = document.getElementById("remove_empty").checked;
+		var filters = document.getElementById("filters").value;
+
+		// Build the embed URL
+		const root_url = window.location.href.split("/").slice(0, -1).join("/");
+		var embed_url = `${root_url}/chart?attribute=${encodeURIComponent(attribute)}&group_by=${encodeURIComponent(group_by)}&chart=${encodeURIComponent(chart_type)}&calculate=${encodeURIComponent(calculate)}&invert_sign=${encodeURIComponent(invert_sign)}&remove_empty=${encodeURIComponent(remove_empty)}`;
+		if (filters) {
+			try {
+				filters = JSON.stringify(JSON.parse(filters));
+			} catch (error) {
+				// Show error on the right field
+				document.getElementById("filter_error").classList.remove("hidden");
+				document.getElementById("filters").classList.remove("border-gray-300");
+				document.getElementById("filters").classList.add("border-red-600");
+				return null;
+			}
+			embed_url = `${embed_url}&filter=${encodeURIComponent(filters)}`;
+		}
+
+		return embed_url;
 	}
 
 	function copy_url() {
@@ -310,6 +486,17 @@
 		tab_btns[option].classList.remove("text-gray-500");
 		tab_btns[option].classList.add("border-teal-600");
 		tab_btns[option].classList.add("text-gray-800");
+
+		active_tab = option;
+
+		document.getElementById("urldiv").classList.add("invisible");
+		reset_errors();
+	}
+
+	function reset_errors() {
+		document.getElementById("filter_error").classList.add("hidden");
+		document.getElementById("filters").classList.remove("border-red-600");
+		document.getElementById("filters").classList.add("border-gray-300");
 	}
 </script>
 {% endblock %}
