@@ -10,6 +10,20 @@
     // Data
     var data = {{ data|tojson }}
 
+    // Create the colors
+    var bg_color = "rgba(13, 148, 136, 0.8)"
+    var hover_bg_color = "rgba(13, 148, 136, 1)"
+    if ('{{ chart }}' == "pie") {
+        var bg_palette = ["rgba(29, 91, 121, 0.8)", "rgba(70, 139, 151, 0.8)", "rgba(239, 98, 98, 0.8)", "rgba(243, 170, 96, 0.8)"]
+        var hover_bg_palette = ["rgba(29, 91, 121, 1)", "rgba(70, 139, 151, 1)", "rgba(239, 98, 98, 1)", "rgba(243, 170, 96, 1)"]
+        bg_color = []
+        hover_bg_color = []
+        for (let i = 0; i < Object.keys(data).length; i++) {
+            bg_color.push(bg_palette[i % bg_palette.length])
+            hover_bg_color.push(hover_bg_palette[i % hover_bg_palette.length])
+        }
+    }
+
     const chart_data = {
     type: '{{ chart }}',
     data: {
@@ -17,8 +31,8 @@
         datasets: [
             {
                 data: Object.values(data),
-                backgroundColor: "rgba(13, 148, 136, 0.8)",
-                hoverBackgroundColor: "rgba(13, 148, 136, 1)",
+                backgroundColor: bg_color,
+                hoverBackgroundColor: hover_bg_color,
             },
         ],
     },
