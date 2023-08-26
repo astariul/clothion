@@ -1,35 +1,53 @@
 {%  extends 'blank_base.html' %}
 {% block content %}
-<section class="flex items-center p-12 text-gray-800 rounded-md">
-    <div class="chart-container" style="position: relative; height:40vh; width:80vw">
-        <canvas id="chart" class="w-full mx-auto my-0"></canvas>
-    </div>
-</section>
+<div class="items-center mx-auto w-full overflow-hidden">
+    <canvas id="chart"></canvas>
+    <!-- <canvas
+        data-te-chart="bar"
+        data-te-dataset-label="Traffic"
+        data-te-labels="['Monday', 'Tuesday' , 'Wednesday' , 'Thursday' , 'Friday' , 'Saturday' , 'Sunday ']"
+        data-te-dataset-data="[2112, 2343, 2545, 3423, 2365, 1985, 987]"
+        data-te-dataset-background-color="rgba(13, 148, 136, 0.8)"
+        data-te-dataset-hover-background-color="rgba(13, 148, 136, 1)">
+    </canvas> -->
+</div>
 {% endblock %}
 {% block script %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('chart');
+    // Data
+    var data = {{ data|tojson }}
 
-    var data = {{ data|tojson }};
-
-    console.log(data);
-
-    new Chart(ctx, {
-        type: '{{ chart }}',
-        data: {
-            labels: Object.keys(data),
-            datasets: [{
+    const chart_data = {
+    type: '{{ chart }}',
+    data: {
+        labels: Object.keys(data),
+        datasets: [
+            {
                 data: Object.values(data),
-            }]
-        },
+                backgroundColor: "rgba(13, 148, 136, 0.8)",
+                hoverBackgroundColor: "rgba(13, 148, 136, 1)",
+            },
+        ],
+    },
+    };
+
+    // Options
+    const chart_options = {
         options: {
             plugins: {
                 legend: {
-                    display: false
-                }
-            }
-        }
-    });
-</script>
+                    display: false,
+                },
+            },
+        },
+    };
+
+    // Chart
+    new te.Chart(
+        document.getElementById("chart"),
+        chart_data,
+        chart_options
+    );
+    </script>
 {% endblock %}
