@@ -1,11 +1,9 @@
-{%  extends 'base.html' %}
+{%  extends 'blank_base.html' %}
 {% block content %}
-<section class="flex items-center p-12 bg-gray-50 text-gray-800 rounded-md">
-	<div class="container flex flex-col items-center justify-center px-5 mx-auto my-auto">
-		<div class="chart-container" style="height:60vh; width:60vw">
-			<canvas id="chart" class="w-full mx-auto my-0"></canvas>
-		</div>
-	</div>
+<section class="flex items-center p-12 text-gray-800 rounded-md">
+    <div class="chart-container" style="position: relative; height:40vh; width:80vw">
+        <canvas id="chart" class="w-full mx-auto my-0"></canvas>
+    </div>
 </section>
 {% endblock %}
 {% block script %}
