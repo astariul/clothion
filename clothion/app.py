@@ -459,6 +459,9 @@ def chart(  # noqa: C901
     if remove_empty:
         data = {k: v for k, v in data.items() if v != 0}
 
+    # Handle potential None key
+    data = {str(k) if k is not None else "null": v for k, v in data.items()}
+
     return templates.TemplateResponse("chart.html", {"data": data, "chart": chart, "request": request})
 
 

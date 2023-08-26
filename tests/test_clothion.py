@@ -1649,6 +1649,14 @@ def test_chart_route_error_with_notion_api(client):
     assert response.template.name == "error.html"
 
 
+def test_chart_route_none_key_in_data_should_be_fine(client):
+    integration_id, table_id = create_table(client, "secret_token", "table_for_number_data")
+
+    response = client.get(f"/{integration_id}/{table_id}/chart", params={"attribute": "price", "group_by": "quantity"})
+    assert response.status_code == 200
+    assert response.template.name == "chart.html"
+
+
 def test_chart_route_valid_minimal_arguments(client):
     integration_id, table_id = create_table(client, "secret_token", "table_for_sum_without_none")
 
