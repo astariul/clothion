@@ -457,7 +457,7 @@ def chart(  # noqa: C901
         data = {k: -v for k, v in data.items()}
 
     if remove_empty:
-        data = {k: v for k, v in data.items() if v != 0}
+        data = {k: v for k, v in data.items() if v != 0 and v is not None}
 
     # Handle potential None key
     data = {str(k) if k is not None else "null": v for k, v in data.items()}
