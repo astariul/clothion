@@ -8,6 +8,7 @@ from typing import Annotated, List
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Form, HTTPException, Query, Request
 from fastapi.exception_handlers import http_exception_handler
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
@@ -22,6 +23,8 @@ ENDIAN = "big"
 
 
 app = FastAPI(title="Clothion", version=__version__, redoc_url=None)
+
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 templates = Jinja2Templates(directory=pathlib.Path(__file__).parent / "templates")
 
