@@ -20,6 +20,11 @@ Embed widgets in your Notion pages easily
   <a href="https://clothion-docs.remond.co/">Documentation</a>
 </p>
 
+<p align="center">
+  <i>⚠️ This is a very rough first version, existing widgets are very limited, but the API works</i>
+  <br>
+  <i>Consider contributing !</i>
+</p>
 
 <h2 align="center">Description</h2>
 
@@ -54,6 +59,8 @@ Then, go to [clothion.remond.co](clothion.remond.co) and enter your integration 
 A URL will be generated, and from that URL, you can create a widget. Just choose the attribute to display, the type of widget you want, etc... and click "Generate link".
 
 Copy the generated URL, go to your Notion page, type `/embed` and paste your widget URL, and that's it ! You should see your widget in your Notion page.
+
+![](https://i.ibb.co/tKkWp0j/demo-right.gif)
 
 _For a more detailed guide (including how to create your own Notion integration), please check the [Documentation](https://clothion-docs.remond.co/Usage-guide-1593be33d1494192b05b98c19c9beb24)._
 
