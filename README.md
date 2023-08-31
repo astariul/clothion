@@ -22,6 +22,7 @@ Embed widgets in your Notion pages easily
 
 
 <h2 align="center">Description</h2>
+
 Clothion is a **free**, **open-source** tool that allows you to build charts and other widgets directly from your Notion database.
 
 You can then **embed** the widgets into your Notion pages.
@@ -58,7 +59,7 @@ _For a more detailed guide (including how to create your own Notion integration)
 
 <h2 align="center">FAQ</h2>
 
-#### ❓ **Why should I use Clothion ? Isn’t there a better alternative ?**
+### ❓ **Why should I use Clothion ? Isn’t there a better alternative ?**
 
 There is many existing tools for embedding a chart in your Notion page. But each of them has some negative side. For example :
 
@@ -69,9 +70,9 @@ There is many existing tools for embedding a chart in your Notion page. But each
 - [NotionVIP](https://uno.notion.vip/charts/) : Can’t pull data from a Notion table.
 - [Fibery](https://fibery.io/) : Logo & report title is included in the embed.
 
-#### ❓ **Is my data safe with Clothion ?**
+### ❓ **Is my data safe with Clothion ?**
 
-Yes, your data is safe.
+**Yes, your data is safe.**
 
 Clothion is open-source, everyone can check the source code and raise concern over potential security issues.
 
