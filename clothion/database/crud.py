@@ -482,7 +482,7 @@ def make_condition(  # noqa: C901
         # Parameters / types validation
         if prop_type == BOOL:
             raise WrongFilter(f"Boolean attribute can never be empty. Can't use `{op}` filter.")
-        if type(value) != bool:
+        if not isinstance(value, bool):
             raise WrongFilter(f"Filter `{op}` expected a value of type boolean (but got {type(value)})")
 
         # Actual condition
