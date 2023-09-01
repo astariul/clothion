@@ -81,6 +81,9 @@ There is many existing tools for embedding a chart in your Notion page. But each
 
 **Yes, your data is safe.**
 
+
+
+
 Clothion is open-source, everyone can check the source code and raise concern over potential security issues.
 
 If privacy is a hard requirement for you, you can always self-host Clothion : see
