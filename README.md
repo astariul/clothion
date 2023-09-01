@@ -60,7 +60,7 @@ A URL will be generated, and from that URL, you can create a widget. Just choose
 
 Copy the generated URL, go to your Notion page, type `/embed` and paste your widget URL, and that's it ! You should see your widget in your Notion page.
 
-![](https://i.ibb.co/tKkWp0j/demo-right.gif)
+![](https://github.com/astariul/clothion/assets/43774355/01752d43-055c-497e-b955-e4d768a729a7)
 
 _For a more detailed guide (including how to create your own Notion integration), please check the [Documentation](https://clothion-docs.remond.co/Usage-guide-1593be33d1494192b05b98c19c9beb24)._
 
