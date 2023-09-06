@@ -5,15 +5,15 @@
 		<h1 class="my-3 text-4xl font-bold">Clothion</h1>
         <p class="text-sm text-gray-600">Check <a class="underline" href="https://clothion-docs.remond.co/">the guide</a> for instructions</p>
 	</div>
-	<form novalidate="" action="/create" method="POST" class="space-y-8 ng-untouched ng-pristine ng-valid" data-bitwarden-watching="1">
+	<form action="/create" method="POST" class="space-y-8 ng-untouched ng-pristine ng-valid" data-bitwarden-watching="1">
 		<div class="space-y-4">
 			<div>
 				<label for="integration" class="block mb-2 text-sm">Integration Token</label>
-				<input type="password" autocomplete="off" name="integration" id="integration" class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800">
+				<input type="password" autocomplete="off" name="integration" id="integration" required class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800">
 			</div>
 			<div>
 				<label for="table" class="block mb-2 text-sm">Table ID</label>
-				<input type="text" name="table" id="table" class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800">
+				<input type="text" name="table" id="table" required class="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800">
 			</div>
 		</div>
 		<div>
