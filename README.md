@@ -17,7 +17,7 @@ Embed widgets in your Notion pages easily
   <a href="#self-host">Self-host</a> •
   <a href="#contribute">Contribute</a>
   <br>
-  <a href="https://clothion-docs.remond.co/">Documentation</a>
+  <a href="https://clothion-docs.rémond.com/">Documentation</a>
 </p>
 
 <p align="center">
@@ -36,7 +36,7 @@ You can then **embed** the widgets into your Notion pages.
 
 Clothion also offers a small API to easily query your data, and build your own widget.
 
-Make sure to check the [Documentation](https://clothion-docs.remond.co/) !
+Make sure to check the [Documentation](https://clothion-docs.rémond.com/) !
 
 ---
 
@@ -54,7 +54,7 @@ Features :
 
 First, create your own Notion integration, and a Notion table that you will use as data source.
 
-Then, go to [clothion.remond.co](clothion.remond.co) and enter your integration token and your table's ID.
+Then, go to [clothion.rémond.com](clothion.rémond.com) and enter your integration token and your table's ID.
 
 A URL will be generated, and from that URL, you can create a widget. Just choose the attribute to display, the type of widget you want, etc... and click "Generate link".
 
@@ -62,7 +62,7 @@ Copy the generated URL, go to your Notion page, type `/embed` and paste your wid
 
 ![](https://github.com/astariul/clothion/assets/43774355/01752d43-055c-497e-b955-e4d768a729a7)
 
-_For a more detailed guide (including how to create your own Notion integration), please check the [Documentation](https://clothion-docs.remond.co/Usage-guide-1593be33d1494192b05b98c19c9beb24)._
+_For a more detailed guide (including how to create your own Notion integration), please check the [Documentation](https://clothion-docs.rémond.com/Usage-guide-1593be33d1494192b05b98c19c9beb24)._
 
 <h2 align="center">FAQ</h2>
 
@@ -112,7 +112,7 @@ docker build -t clothion .
 docker run -p 9910:9910 -v ~/data:/clothion/data -e CLOTHION_DB_PATH="/clothion/data/clothion.sql" clothion
 ```
 
-_Make sure to check the [Documentation](https://clothion-docs.remond.co/Self-hosting-e1235b7903c04041819d8ab9402885bf) for more details !_
+_Make sure to check the [Documentation](https://clothion-docs.rémond.com/Self-hosting-e1235b7903c04041819d8ab9402885bf) for more details !_
 
 <h2 align="center">Contribute</h2>
 
