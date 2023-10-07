@@ -1,8 +1,11 @@
 """Main file, where the FastAPI application and all the routes are declared."""
 import binascii
+import copy
 import json
 import pathlib
 from base64 import urlsafe_b64decode, urlsafe_b64encode
+from datetime import datetime, timedelta
+from statistics import mean
 from typing import Annotated, List
 
 import uvicorn
@@ -328,6 +331,205 @@ def panel(  # noqa: C901
             value = int(value)
         except ValueError:
             raise HTTPException(status_code=422, detail=f"Value (`{value}`) can't be converted to an integer.")
+
+    return templates.TemplateResponse(
+        "panel.html", {"value": value, "unit": unit, "title": title, "description": description, "request": request}
+    )
+
+
+@table_router.get("/panel_monthly", tags=["HTML"], response_class=HTMLResponse)
+def panel_monthly(  # noqa: C901
+    request: Request,
+    attribute: str = None,
+    calculate: str = "sum",
+    date_attribute: str = None,
+    day: int = 25,
+    filter: str = None,
+    unit: str = None,
+    title: str = None,
+    description: str = None,
+    is_integer: bool = False,
+    invert_sign: bool = False,
+    space_large_number: bool = True,
+    update_cache: bool = True,
+    req: ReqTable = Depends(),
+    db: Session = Depends(get_db),
+):
+    """Same as panel route, but compute the monthly value at specific date."""
+    # Ensure the table exists
+    req.error_check_for_html()
+
+    # Check given parameters
+    if attribute is None:
+        raise HTTPException(
+            status_code=422, detail="You should specify which attribute to use with the query parameter `attribute`."
+        )
+
+    if filter is not None:
+        # Parse the filter
+        try:
+            filter = json.loads(filter)
+        except json.decoder.JSONDecodeError:
+            raise HTTPException(status_code=422, detail="Parameter `filter` is not a valid JSON.")
+    else:
+        filter = {}
+
+    # Find the right date to keep only data from that date, and update the filter accordingly
+    now = datetime.now()
+    if now.day >= day:
+        d = datetime(now.year, now.month, day)
+    else:
+        last_month = now.replace(day=1) - timedelta(days=1)
+        d = datetime(last_month.year, last_month.month, day)
+
+    if date_attribute is None:
+        raise HTTPException(status_code=422, detail="Parameter `date_attribute` not specified.")
+
+    filter[date_attribute] = {"on_or_after": d.isoformat()}
+
+    # Create the proper parameters for the data call
+    try:
+        params = notion_cache.Parameters(calculate=calculate, filter=filter, update_cache=update_cache)
+    except ValidationError:
+        raise HTTPException(status_code=422, detail="Invalid calculate function.")
+
+    # Get the data
+    try:
+        data = notion_cache.get_data(db, req.db_table, params)
+    except notion_cache.APIResponseError:
+        raise HTTPException(status_code=422, detail="Error with the Notion API.")
+
+    # Extract the value to display
+    if attribute not in data:
+        raise HTTPException(
+            status_code=422,
+            detail=f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
+            f"{list(data.keys())}.",
+        )
+
+    value = data[attribute]
+
+    if value is None:
+        raise HTTPException(
+            status_code=422, detail=f"Please ensure `{attribute}` is a number, the operation returned `None`."
+        )
+
+    # Additional processing
+    if is_integer:
+        try:
+            value = int(value)
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Value (`{value}`) can't be converted to an integer.")
+    if invert_sign:
+        value = -value
+    if space_large_number:
+        value = f"{value:,}".replace(",", " ")
+
+    return templates.TemplateResponse(
+        "panel.html", {"value": value, "unit": unit, "title": title, "description": description, "request": request}
+    )
+
+
+@table_router.get("/panel_last_x_months", tags=["HTML"], response_class=HTMLResponse)
+def panel_last_x_months(  # noqa: C901
+    request: Request,
+    attribute: str = None,
+    calculate: str = "sum",
+    x: int = 3,
+    date_attribute: str = None,
+    day: int = 25,
+    filter: str = None,
+    unit: str = None,
+    title: str = None,
+    description: str = None,
+    is_integer: bool = False,
+    invert_sign: bool = False,
+    space_large_number: bool = True,
+    update_cache: bool = True,
+    req: ReqTable = Depends(),
+    db: Session = Depends(get_db),
+):
+    """Same as panel route, but compute the monthly value at specific date."""
+    # Ensure the table exists
+    req.error_check_for_html()
+
+    # Check given parameters
+    if attribute is None:
+        raise HTTPException(
+            status_code=422, detail="You should specify which attribute to use with the query parameter `attribute`."
+        )
+
+    if filter is not None:
+        # Parse the filter
+        try:
+            filter = json.loads(filter)
+        except json.decoder.JSONDecodeError:
+            raise HTTPException(status_code=422, detail="Parameter `filter` is not a valid JSON.")
+    else:
+        filter = {}
+
+    if date_attribute is None:
+        raise HTTPException(status_code=422, detail="Parameter `date_attribute` not specified.")
+
+    # We need to do one query for each month
+    filters = [copy.deepcopy(filter) for _ in range(x)]
+
+    # Find the right dates for each of the last months
+    now = datetime.now()
+    if now.day >= day:
+        d = datetime(now.year, now.month, day)
+    else:
+        last_month = now.replace(day=1) - timedelta(days=1)
+        d = datetime(last_month.year, last_month.month, day)
+
+    for i in range(x):
+        prev_d = (d.replace(day=1) - timedelta(days=1)).replace(day=day)
+        filters[i][date_attribute] = {
+            "on_or_after": prev_d.isoformat(),
+            "before": d.isoformat(),
+        }
+        d = prev_d
+
+    # Create the proper parameters for the data calls
+    try:
+        params = [notion_cache.Parameters(calculate=calculate, filter=f, update_cache=update_cache) for f in filters]
+    except ValidationError:
+        raise HTTPException(status_code=422, detail="Invalid calculate function.")
+
+    # Get the data
+    try:
+        data = [notion_cache.get_data(db, req.db_table, p) for p in params]
+    except notion_cache.APIResponseError:
+        raise HTTPException(status_code=422, detail="Error with the Notion API.")
+
+    # Extract the value to display
+    if any(attribute not in result for result in data):
+        raise HTTPException(
+            status_code=422,
+            detail=f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
+            f"{list(data.keys())}.",
+        )
+
+    values = [result[attribute] for result in data]
+
+    if any(v is None for v in values):
+        raise HTTPException(
+            status_code=422, detail=f"Please ensure `{attribute}` is a number, the operation returned `None`."
+        )
+
+    # Compute the average
+    value = mean(values)
+
+    # Additional processing
+    if is_integer:
+        try:
+            value = int(value)
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Value (`{value}`) can't be converted to an integer.")
+    if invert_sign:
+        value = -value
+    if space_large_number:
+        value = f"{value:,}".replace(",", " ")
 
     return templates.TemplateResponse(
         "panel.html", {"value": value, "unit": unit, "title": title, "description": description, "request": request}
