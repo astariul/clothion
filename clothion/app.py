@@ -510,7 +510,7 @@ def panel_last_x_months(  # noqa: C901
     # Extract the value to display
     if any(attribute not in result for result in data):
         if default is not None:
-            values = [r[attribute] if r is not None else default for r in data]
+            values = [r[attribute] if attribute in r else default for r in data]
         else:
             raise HTTPException(
                 status_code=422,
