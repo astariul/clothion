@@ -341,6 +341,7 @@ def panel(  # noqa: C901
 def panel_monthly(  # noqa: C901
     request: Request,
     attribute: str = None,
+    default: int = None,
     calculate: str = "sum",
     date_attribute: str = None,
     day: int = 25,
@@ -401,13 +402,16 @@ def panel_monthly(  # noqa: C901
 
     # Extract the value to display
     if attribute not in data:
-        raise HTTPException(
-            status_code=422,
-            detail=f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
-            f"{list(data.keys())}.",
-        )
-
-    value = data[attribute]
+        if default is not None:
+            value = default
+        else:
+            raise HTTPException(
+                status_code=422,
+                detail=f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
+                f"{list(data.keys())}.",
+            )
+    else:
+        value = data[attribute]
 
     if value is None:
         raise HTTPException(
@@ -434,6 +438,7 @@ def panel_monthly(  # noqa: C901
 def panel_last_x_months(  # noqa: C901
     request: Request,
     attribute: str = None,
+    default: int = None,
     calculate: str = "sum",
     x: int = 3,
     date_attribute: str = None,
@@ -504,13 +509,16 @@ def panel_last_x_months(  # noqa: C901
 
     # Extract the value to display
     if any(attribute not in result for result in data):
-        raise HTTPException(
-            status_code=422,
-            detail=f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
-            f"{list(data.keys())}.",
-        )
-
-    values = [result[attribute] for result in data]
+        if default is not None:
+            values = [r[attribute] if r is not None else default for r in data]
+        else:
+            raise HTTPException(
+                status_code=422,
+                detail=f"No such attribute (`{attribute}`) in this table. The following attributes are available : "
+                f"{list(data.keys())}.",
+            )
+    else:
+        values = [result[attribute] for result in data]
 
     if any(v is None for v in values):
         raise HTTPException(

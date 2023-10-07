@@ -97,6 +97,8 @@ def extract_data_from_db(db: Session, db_table_id: int, parameters: Parameters) 
     if parameters.group_by is not None:
         return data
     elif parameters.calculate is not None:
+        if len(data) == 0:
+            return {}
         assert len(data) == 1, "Aggregation function used, but got more than one result"
         return list(data.values())[0]
     else:
