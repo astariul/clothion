@@ -1,4 +1,5 @@
 """Main file, where the FastAPI application and all the routes are declared."""
+
 import binascii
 import copy
 import json

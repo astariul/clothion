@@ -1,6 +1,7 @@
 """This module contains the models of the DB and CRUD functions to easily
 interact with the DB.
 """
+
 from sqlalchemy import MetaData, create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
