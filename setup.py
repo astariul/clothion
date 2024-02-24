@@ -12,7 +12,7 @@ reqs = [
     "omegaconf~=2.3",
     "sqlalchemy~=2.0",
     "psycopg2-binary~=2.9",
-    "notion-client~=2.0",
+    "notion-client~=2.1.0",
     "python-dateutil~=2.8",
 ]
 
