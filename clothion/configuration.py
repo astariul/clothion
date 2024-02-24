@@ -1,4 +1,5 @@
 """Configuration declaration & parsing."""
+
 import os
 from dataclasses import dataclass
 

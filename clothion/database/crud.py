@@ -1,4 +1,5 @@
 """CRUD functions to interact with the DB."""
+
 import json
 import uuid
 from datetime import datetime, timezone

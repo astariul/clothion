@@ -1,6 +1,7 @@
 """Module containing the code responsible for calling & caching the Notion
 API.
 """
+
 import json
 from collections import defaultdict
 from typing import Dict, List, Literal, Optional, Union
