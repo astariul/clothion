@@ -783,9 +783,7 @@ class MockDBQuery:
             response = QueryResponse()
             now = datetime.now(timezone.utc)
             jan_first = now.replace(month=1, day=1, hour=0, minute=0, second=0)
-            dec_last = (jan_first + timedelta(days=365)).replace(day=1, hour=23, minute=59, second=59) - timedelta(
-                days=1
-            )
+            dec_last = now.replace(month=12, day=31, hour=23, minute=59, second=59)
             before_jan_first = jan_first - timedelta(days=1)
             after_dec_last = dec_last + timedelta(days=1)
             response.add_element(t=title("E1"), d=date(jan_first.isoformat()))
