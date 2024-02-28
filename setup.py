@@ -8,7 +8,7 @@ with open("clothion/__init__.py") as f:
     v = [line for line in f if line.startswith("__version__")][0].split('"')[1]
 
 reqs = [
-    "fastapi[all]~=0.95",
+    "fastapi[all]~=0.110",
     "omegaconf~=2.3",
     "sqlalchemy~=2.0",
     "psycopg2-binary~=2.9",
