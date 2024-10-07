@@ -19,7 +19,7 @@ reqs = [
 extras_require = {
     "admin": ["alembic~=1.10"],
     "test": ["pytest~=8.0", "pytest-cov~=5.0", "coverage-badge~=1.0"],
-    "lint": ["black~=24.2", "ruff~=0.1", "pre-commit~=3.2"],
+    "lint": ["black~=24.2", "ruff~=0.1", "pre-commit>=3.2,<5.0"],
 }
 extras_require["all"] = sum(extras_require.values(), [])
 extras_require["dev"] = extras_require["test"] + extras_require["lint"]
